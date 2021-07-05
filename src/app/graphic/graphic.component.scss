@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans&family=Quicksand:wght@300&display=swap');
+
+
+.hovered-district-info {
+  position: absolute;
+  padding: 5vh 0px 0px 10%;
+  display: flex;
+  height: 95vh;
+  flex-direction: column;
+  pointer-events: none;
+}
+
+.en {
+  text-shadow: 0px 0px 22px #ffffff;
+  font-family: 'Quicksand', sans-serif;
+}
+
+.zh {
+  text-shadow: 0px 0px 22px #ffffff;
+  font-family: 'Open Sans', sans-serif;
+}
+
+h2 {
+  font-size: 3rem;
+  margin: 0px;
+  padding: 0px 1rem 0px 0px;
+}
+
+h3 {
+  font-size: 1rem;
+  margin: 0px;
+  padding: 0px 1rem 0px 0px;
+}
+
+p {
+  font-size: 1.5rem;
+}
+
+.text-container {}
+
+.district-name-container {
+
+  display: flex;
+  padding-bottom: 2vh;
+}
+
+.city-name-container {
+  display: flex;
+}
+
+.statistics-container {
+
+  margin-top: auto;
+  padding-bottom: 10vh;
+
+  small {
+    font-size: 1rem;
+  }
+
+  h3 {
+    font-size: 3rem;
+  }
+
+}

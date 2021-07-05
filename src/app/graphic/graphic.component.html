@@ -1,0 +1,41 @@
+<div [ngStyle]="{'color': htmlTextColor, display: showDistrictData === 'show' ? 'flex':'none'}"
+    class="hovered-district-info">
+    <h1>
+        台灣天氣資訊圖像化
+    </h1>
+    <div class="district-name-container" *ngIf="this.hoverDistrictWeatherInfo">
+        <h2 class="zh">{{this.hoverDistrictWeatherInfo.district}}</h2>
+        <h2 class="en">{{this.hoverDistrictWeatherInfo.enDistrictAndCity.split("_")[0]}}</h2>
+    </div>
+    <div class="city-name-container" *ngIf="this.hoverDistrictWeatherInfo">
+        <h3 class="zh">{{this.hoverDistrictWeatherInfo.city}}</h3>
+        <h3 class="en">{{this.hoverDistrictWeatherInfo.enCity}}</h3>
+    </div>
+    <div class="statistics-container" *ngIf="this.hoverDistrictWeatherInfo">
+        <small class="zh">今日降雨量</small>
+        <h3 class="en">{{this.hoverDistrictWeatherInfo.rainValue | number: '1.1-1'}}</h3>
+        <small class="zh">本日最高溫</small>
+        <h3 class="en">{{this.hoverDistrictWeatherInfo.topTempValue | number: '1.1-1'}}</h3>
+    </div>
+</div>
+<div [ngStyle]="{'color': '#666666', display: showDistrictData === 'none' ? 'flex':'none'}"
+    class="hovered-district-info">
+    <h1>
+        台灣天氣資訊圖像化
+    </h1>
+    <div class="city-name-container">
+        <h3 class="zh">無該區氣象台資料</h3>
+        <h3 class="en">No Weather Information Here.</h3>
+    </div>
+</div>
+<div [ngStyle]="{'color': '#666666', display: showDistrictData === 'select' ? 'flex':'none'}"
+    class="hovered-district-info">
+    <h1>
+        台灣天氣資訊圖像化
+    </h1>
+    <div class="city-name-container">
+        <h3 class="zh">移動滑鼠以探索天氣狀況</h3>
+        <h3 class="en">Explore by moving your mouse.</h3>
+    </div>
+</div>
+<div #canvas (mousemove)="onMousemove($event)" style="width: 100%; height:100vh;"></div>
