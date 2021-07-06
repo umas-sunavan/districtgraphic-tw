@@ -30,9 +30,6 @@ export class WeatherService {
         const sameCityName = districtMap.zhCity === waetherCityName
         return sameDistrictName && sameCityName
       })
-      if (!mappedDistrict) {
-        console.log(`No station in ${districtMap.zhCity}, ${districtMap.zhDistrict}`);
-      }
     })
   })
 
@@ -41,9 +38,6 @@ export class WeatherService {
       const isRainMalfunction = station.weatherElement.find(element => element.elementName === 'H_24R')?.elementValue === '-99'
       const isHighestTempMalfunction = station.weatherElement.find(element => element.elementName === 'D_TX')?.elementValue === '-99'
       const isMalfunction = isHighestTempMalfunction || isRainMalfunction
-      if (isMalfunction) {
-        console.log('Malfunctioned station: ', station.locationName, station.parameter.find(parameter => parameter.parameterName === 'CITY')?.parameterValue, station.parameter.find(parameter => parameter.parameterName === 'TOWN')?.parameterValue);
-      }
       return !isMalfunction
     })
     value.records.location = functioningStations

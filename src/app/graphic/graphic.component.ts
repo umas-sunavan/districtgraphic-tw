@@ -532,9 +532,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   animate = () => {
-    if (this.renderer.info.render.frame < 200) {
-      requestAnimationFrame(this.animate);
-    }
+    requestAnimationFrame(this.animate);
     this.renderer.render(this.scene, this.camera);
   };
 }

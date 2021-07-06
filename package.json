@@ -5,9 +5,10 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build-forgithub-pages": "ng build --output-path docs --base-href /districtgraphic-tw/",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "dev-base-dir": "lite-server --baseDir='dist/districtgraphic-tw'",
+    "dev-base-dir": "lite-server --baseDir='docs/'",
     "dev": "lite-server"  
   },
   "private": true,
