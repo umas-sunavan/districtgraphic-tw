@@ -17,8 +17,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   scene: Scene
   camera: PerspectiveCamera
   renderer: WebGLRenderer
-  box: Object3D
-  box2: Object3D
   light: PointLight
   directionalLight: DirectionalLight
   hemisphereLight: HemisphereLight
@@ -29,13 +27,16 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   whiteBorderMaterial: MeshBasicMaterial
   whiteBorder: Mesh
   sceneWeatherInfo: DistrictWeatherInfo[]
-  transparentMode: boolean
+  transparentFlag: boolean
   orbitcontrols: OrbitControls
-  textsMeshAndColor: { textMesh: Mesh, textHexColor: string }[]
-  intersactions: Intersection[] | undefined
+  textsMeshAndColor: { textMesh: Mesh, districtMesh: Mesh, textHexColor: string }[]
+  intersactions: Intersection[] = []
   hoverDistrictWeatherInfo: DistrictWeatherInfo | undefined
   htmlTextColor: string = '#666666'
-  showDistrictData: string = 'flex'
+  htmlTextStatus: string = 'flex'
+  box: Object3D
+  box2: Object3D
+
 
   constructor(
     private weatherServer: WeatherService,
@@ -59,7 +60,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.whiteBorder = new Mesh()
     this.sceneWeatherInfo = []
     this.textsMeshAndColor = []
-    this.transparentMode = false
+    this.transparentFlag = false
     this.orbitcontrols = new OrbitControls(this.camera, this.renderer.domElement)
 
     this.box = new Mesh()
@@ -103,59 +104,72 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     }
   }
 
-  // getChangeColor = () => {
-  //   return foundText.textHexColor
-  // }
+  transparentAllMeshes = () => {
+    this.scene.traverse(object3d => {
+      this.transparentMesh((<Mesh>object3d))
+    })
+  }
+
+  paintColorOnMesh = (paintBasedOn: DistrictWeatherInfo[], mesh: Mesh) => {
+    this.paintMeshFrom(paintBasedOn, mesh);
+    // @ts-ignore
+    mesh.material.opacity = 1
+  }
+
+  updateMapText = (mesh: Mesh) => {
+    const textAboveMesh = this.textsMeshAndColor.filter(text => text.textMesh.name.includes(mesh.name))
+    if (textAboveMesh.length !== 0) {
+      // @ts-ignore 
+      textAboveMesh.forEach(foundText => foundText.textMesh.material.color = this.convertHexTo0to1(foundText.textHexColor))
+    }
+  }
+
+  hasIntersection = () => this.intersactions.length > 0
+
+  restoreMeshColor = (mesh: Mesh) => {
+    if (mesh.isMesh) {
+      this.paintMeshFrom(this.sceneWeatherInfo, mesh, { r: 1, g: 1, b: 1 });
+      // @ts-ignore
+      mesh.material.opacity = 1
+    }
+  }
+
+  paintColorOntext = () => {
+    this.textsMeshAndColor.forEach(({ textMesh, textHexColor: textColor }) => {
+      // @ts-ignore
+      textMesh.material.color = this.convertHexTo0to1(textColor)
+    });
+  }
 
   onMousemove = (event: MouseEvent) => {
     event.preventDefault()
-    this.mouse = this.setupMouseCoordinate(event)
+    this.mouse = this.updateMousePosiion(event)
     this.raycaster.setFromCamera(this.mouse, this.camera)
     if (this.taiwanMap.children[0]) {
       this.intersactions = this.raycaster.intersectObjects(this.taiwanMap.children[0].children, true)
       if (this.intersactions.length > 0) {
-        this.transparentMode = true
-        this.scene.traverse(object3d => {
-          this.transparentMesh((<Mesh>object3d))
-        })
+        this.transparentFlag = true
+        this.transparentAllMeshes()
         this.intersactions.forEach(intersection => {
-          this.paintMeshFrom(this.sceneWeatherInfo, <Mesh>intersection.object);
-          // @ts-ignore
-          (<Mesh>intersection.object).material.opacity = 1
-          const color = this.findWeatherInfoFromMeshName(this.sceneWeatherInfo, (<Mesh>intersection.object))?.color
-          if (color) {
-            this.htmlTextColor = '#' + this.convert0to1ToHex(color || { r: 0.4, g: 0.4, b: 0.4 })
-            console.log(this.htmlTextColor);
-            this.showDistrictData = 'show'
+          const hoverMesh = <Mesh>intersection.object
+          this.paintColorOnMesh(this.sceneWeatherInfo, hoverMesh)
+          const districtColor = this.findWeatherInfoFromMeshName(this.sceneWeatherInfo, hoverMesh)?.color
+          // if got color data then paint text
+          if (districtColor) {
+            this.htmlTextColor = '#' + this.convert0to1ToHex(districtColor || { r: 0.4, g: 0.4, b: 0.4 });
+            this.htmlTextStatus = 'show'
           } else {
-            this.showDistrictData = 'none'
+            this.htmlTextStatus = 'none' // means the mesh has no data to show
           }
-
-          const foundTexts = this.textsMeshAndColor.filter(text => {
-            return text.textMesh.name.includes((<Mesh>intersection.object).name)
-          })
-          if (foundTexts.length !== 0) {
-            foundTexts.forEach(foundText => {
-              // @ts-ignore 
-              foundText.textMesh.material.color = this.convertHexTo0to1(foundText.textHexColor)
-            })
-          }
+          this.updateMapText(hoverMesh)
         })
-      } else if (this.transparentMode) {
+      } else if (this.transparentFlag) {
         this.taiwanMap.children[0].traverse(object3d => {
-          const mesh = (<Mesh>object3d)
-          if (mesh.isMesh) {
-            this.paintMeshFrom(this.sceneWeatherInfo, mesh, { r: 1, g: 1, b: 1 });
-            // @ts-ignore
-            mesh.material.opacity = 1
-          }
+          this.restoreMeshColor(<Mesh>object3d)
         })
-        this.textsMeshAndColor.forEach(({ textMesh, textHexColor: textColor }) => {
-          // @ts-ignore
-          textMesh.material.color = this.convertHexTo0to1(textColor)
-        });
-        this.showDistrictData = 'select'
-        this.transparentMode = false
+        this.paintColorOntext()
+        this.htmlTextStatus = 'select'
+        this.transparentFlag = false
       }
       this.intersactions.find(intersection => {
         if ((<Mesh>intersection.object).isMesh) {
@@ -165,7 +179,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     }
   }
 
-  setupMouseCoordinate = (event: MouseEvent): { x: number, y: number } => {
+  updateMousePosiion = (event: MouseEvent): { x: number, y: number } => {
     const mouseXFromDivLeft = event.offsetX
     const mouseYFromDivTop = event.offsetY
     const mouseXInCanvas0to1 = mouseXFromDivLeft / this.canvas.nativeElement.offsetWidth
@@ -210,9 +224,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.box.traverse(object3d => {
       if ((<Mesh>object3d).isMesh) {
         //@ts-ignore
-        // (<Mesh>object3d).material.metalness = 0.8;
-        // @ts-ignore
-        // (<Mesh>object3d).material.roughness = 0.4;
         (<Mesh>object3d).castShadow = true;
         (<Mesh>object3d).receiveShadow = true;
       }
@@ -221,10 +232,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.box2.traverse(object3d => {
       if ((<Mesh>object3d).isMesh) {
         //@ts-ignore
-        // (<Mesh>object3d).material.metalness = 0.8;
-        // @ts-ignore
-        // (<Mesh>object3d).material.roughness = 0.4;
-        (<Mesh>object3d).castShadow = true;
         (<Mesh>object3d).receiveShadow = true;
       }
     })
@@ -288,10 +295,17 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     return "" + (0x1000000 + (Math.round((R2 - R1) * p) + R1) * 0x10000 + (Math.round((G2 - G1) * p) + G1) * 0x100 + (Math.round((B2 - B1) * p) + B1)).toString(16).slice(1);
   }
 
-  getTemperatureRange = (WeatherInDistricts: DistrictWeatherInfo[]) => {
+  getTempRange = (WeatherInDistricts: DistrictWeatherInfo[]) => {
     const sortByTemp = WeatherInDistricts.sort((a, b) => +a.topTempValue - +b.topTempValue)
     const highestTemp = +sortByTemp[sortByTemp.length - 1].topTempValue
     const lowestTemp = +sortByTemp[0].topTempValue
+    return [highestTemp, lowestTemp]
+  }
+
+  getRainningRange = (WeatherInDistricts: DistrictWeatherInfo[]) => {
+    const sortByTemp = WeatherInDistricts.sort((a, b) => +a.rainValue - +b.rainValue)
+    const highestTemp = +sortByTemp[sortByTemp.length - 1].rainValue
+    const lowestTemp = +sortByTemp[0].rainValue
     return [highestTemp, lowestTemp]
   }
 
@@ -308,39 +322,48 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     return this.convertHexTo0to1(hashColor)
   }
 
-  animateDistricts = (buffer: { mesh: Mesh, weatherInfo: DistrictWeatherInfo | undefined }[]) => {
+  animateDistrictsHeight = (buffer: { mesh: Mesh, weatherInfo: DistrictWeatherInfo | undefined }[]) => {
+    const weatherInfo: DistrictWeatherInfo[] = <DistrictWeatherInfo[]>buffer.filter(each => each.weatherInfo !== undefined).map(each => each.weatherInfo)
+    const [highestRainning, lowestRainning] = this.getRainningRange(weatherInfo)
+    const districtMeshAnimations:any[] = []
     for (let i = 0; i < buffer.length; i++) {
       if (buffer[i].weatherInfo) {
-        const info = buffer[i].weatherInfo || { rainValue: '0' }
+        const rainValue = buffer[i].weatherInfo?.rainValue || '0'
         const from = { scaleY: 1 }
-        const to = { scaleY: +info.rainValue * 2 + 1 }
-        gsap.to(from, {
-          ...to,
-          duration: 1,
-          onStart: (() => {
-            if (+info.rainValue !== 0) {
-              buffer[i].mesh.castShadow = true
-            }
-          }),
-          onUpdate: (() => {
-            buffer[i].mesh.scale.setY(from.scaleY)
-            buffer[i].mesh.position.setY(from.scaleY / 2)
-          }),
-          ease: Power1.easeInOut
-        }).delay(1).play()
+        const normalizedScale = (+rainValue - lowestRainning) / (highestRainning - lowestRainning);
+        const to = { scaleY: normalizedScale * 20 + 1 }
+        const districtMeshAnimation =
+          gsap.to(
+            from, {
+            ...to,
+            duration: 1,
+            onStart: (() => {
+              if (+rainValue !== 0) {
+                buffer[i].mesh.castShadow = true
+              }
+            }),
+            onUpdate: (() => {
+              buffer[i].mesh.scale.setY(from.scaleY)
+              buffer[i].mesh.position.setY(from.scaleY / 2)
+              this.textsMeshAndColor[0].districtMesh.position.setY(from.scaleY / 2)
+            }),
+            ease: Power1.easeInOut
+          }
+          ).delay(1).play()
+        districtMeshAnimations.push(districtMeshAnimation)
       }
     }
   }
 
   setupMap = () => {
     const loader = new GLTFLoader()
-
     loader.loadAsync(this.ngLocation.prepareExternalUrl('/assets/taiwam15.gltf')).then(gltf => {
       gltf.scene.scale.set(0.1, 0.1, 0.1)
       this.weatherServer.getWeatherInfo().subscribe(districtsWeatherInfo => {
         const districtsAnimationBuffer: { mesh: Mesh, weatherInfo: DistrictWeatherInfo | undefined }[] = []
         this.setupMapMesh(gltf.scene, districtsWeatherInfo, districtsAnimationBuffer)
         this.setupAndAnimateTexts(districtsAnimationBuffer)
+        this.animateDistrictsHeight(districtsAnimationBuffer)
       });
       this.scene.add(gltf.scene)
     })
@@ -349,7 +372,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   setupMapMesh = (scene: Group, districtsWeatherInfoWithoutEnglish: DistrictWeatherInfo[], districtsAnimationBuffer: { mesh: Mesh, weatherInfo: DistrictWeatherInfo | undefined }[]) => {
     const mapMaterial = new MeshPhongMaterial({ opacity: 1.0, transparent: true })
     const distrcitsWeatherInfo = this.appendEnglishNames(districtsWeatherInfoWithoutEnglish)
-    const [highestTemp, lowestTemp] = this.getTemperatureRange(distrcitsWeatherInfo)
+    const [highestTemp, lowestTemp] = this.getTempRange(distrcitsWeatherInfo)
     this.taiwanMap = scene;
     scene.traverse(object3d => {
       const mesh: Mesh = (<Mesh>object3d)
@@ -376,6 +399,8 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     const [hTDistrictMesh, hTWeatherInfo] = this.getSpecialMeshAndWeatherInfo('highest', 'temperature', this.sceneWeatherInfo)
     const [lTDistricempMesh, lTWeatherInfo] = this.getSpecialMeshAndWeatherInfo('lowest', 'temperature', this.sceneWeatherInfo)
     const [hRDistrictMesh, hRWeatherInfo] = this.getSpecialMeshAndWeatherInfo('highest', 'rainning', this.sceneWeatherInfo)
+    const weatherInfo: DistrictWeatherInfo[] = <DistrictWeatherInfo[]>buffer.filter(each => each.weatherInfo !== undefined).map(each => each.weatherInfo)
+
     const loader = new FontLoader()
     loader.load(this.ngLocation.prepareExternalUrl('/assets/jf-openhuninn-1.1_Regular_districts_words.json'), ((font) => {
       const hTFontMeshTitle = this.createTextMesh(font, hTDistrictMesh, hTWeatherInfo.district, hTWeatherInfo.color)
@@ -387,10 +412,9 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       const hTFontMeshGroup = this.createTextMeshGroup(hTFontMeshTitle, hTFontMeshSubtitle)
       const lTFontMeshGroup = this.createTextMeshGroup(lTFontMeshTitle, lTFontMeshSubtitle)
       const hRFontMeshGroup = this.createTextMeshGroup(hRFontMeshTitle, hRFontMeshSubtitle)
-      this.animateText(hTFontMeshGroup, hTWeatherInfo)
-      this.animateText(lTFontMeshGroup, lTWeatherInfo)
-      this.animateText(hRFontMeshGroup, hRWeatherInfo)
-      this.animateDistricts(buffer)
+      this.animateText(hTFontMeshGroup, hTWeatherInfo, weatherInfo)
+      this.animateText(lTFontMeshGroup, lTWeatherInfo, weatherInfo)
+      this.animateText(hRFontMeshGroup, hRWeatherInfo, weatherInfo)
       this.orbitcontrols.addEventListener('change', () => {
         [...hTFontMeshGroup.children, ...lTFontMeshGroup.children, ...hRFontMeshGroup.children].forEach(mesh => {
           mesh.lookAt(this.camera.position)
@@ -399,15 +423,15 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     }))
   }
 
-  animateText = (fontMesh: Mesh | Group, weatherInfo: DistrictWeatherInfo) => {
+  animateText = (fontMesh: Mesh | Group, weatherInfo: DistrictWeatherInfo, weatherInfos: DistrictWeatherInfo[]) => {
+    const [highestRainning, lowestRainning] = this.getRainningRange(weatherInfos)
     const from = { scaleY: 1 }
-    const to = { scaleY: +weatherInfo.rainValue * 2 + 1 }
+    const normalizedScale = (+weatherInfo.rainValue - lowestRainning) / (highestRainning - lowestRainning);
+    const to = { scaleY: normalizedScale * 20 + 1 }
     gsap.to(from, {
       ...to,
       duration: 1.5,
       onUpdate: (() => {
-        fontMesh.children[0].lookAt(this.camera.position) // title
-        fontMesh.children[1].lookAt(this.camera.position) // subtitle
         fontMesh.position.setY((from.scaleY / 9))
       }),
       ease: Power1.easeInOut
@@ -437,13 +461,12 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     })
 
     const fontColor: string = this.blendHexColors('#' + this.convert0to1ToHex(districtColor), '#000000', 0.3)
-    console.log(fontColor);
     const material = new MeshPhongMaterial({ color: +('0x' + fontColor) })
     fontMesh = new Mesh(geometry, material)
     fontMesh.position.set(districtMesh.position.x * 0.1, districtMesh.position.y * 0.1, districtMesh.position.z * 0.1)
     fontMesh.name = `${districtMesh.name} text`
 
-    this.textsMeshAndColor.push({ textMesh: fontMesh, textHexColor: fontColor + '' })
+    this.textsMeshAndColor.push({ textMesh: fontMesh, districtMesh: districtMesh, textHexColor: fontColor + '' })
     this.scene.add(fontMesh)
     return fontMesh
   }
@@ -509,7 +532,9 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   animate = () => {
-    requestAnimationFrame(this.animate);
+    if (this.renderer.info.render.frame < 200) {
+      requestAnimationFrame(this.animate);
+    }
     this.renderer.render(this.scene, this.camera);
   };
 }

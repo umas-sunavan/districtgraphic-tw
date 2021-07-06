@@ -1,4 +1,4 @@
-<div [ngStyle]="{'color': htmlTextColor, display: showDistrictData === 'show' ? 'flex':'none'}"
+<div [ngStyle]="{'color': htmlTextColor, display: htmlTextStatus === 'show' ? 'flex':'none'}"
     class="hovered-district-info">
     <h1>
         台灣天氣資訊圖像化
@@ -18,7 +18,7 @@
         <h3 class="en">{{this.hoverDistrictWeatherInfo.topTempValue | number: '1.1-1'}}</h3>
     </div>
 </div>
-<div [ngStyle]="{'color': '#666666', display: showDistrictData === 'none' ? 'flex':'none'}"
+<div [ngStyle]="{'color': '#666666', display: htmlTextStatus === 'none' ? 'flex':'none'}"
     class="hovered-district-info">
     <h1>
         台灣天氣資訊圖像化
@@ -28,7 +28,7 @@
         <h3 class="en">No Weather Information Here.</h3>
     </div>
 </div>
-<div [ngStyle]="{'color': '#666666', display: showDistrictData === 'select' ? 'flex':'none'}"
+<div [ngStyle]="{'color': '#666666', display: htmlTextStatus === 'select' ? 'flex':'none'}"
     class="hovered-district-info">
     <h1>
         台灣天氣資訊圖像化
