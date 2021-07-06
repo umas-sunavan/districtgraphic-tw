@@ -1,6 +1,6 @@
 # 全台鄉鎮市區天氣動態地圖
 
-網址：https://umas-sunavan.github.io/taiwan-district-inforgraphic/
+網址：https://umas-sunavan.github.io/districtgraphic-tw/
 
 客製化的台灣行政區域圖，加上氣象資料所產生的台灣天氣地圖。
 
