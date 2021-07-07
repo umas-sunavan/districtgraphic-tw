@@ -5,7 +5,7 @@ import { BackSide, BoxGeometry, CameraHelper, Color, CylinderGeometry, Direction
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { WeatherService } from '../weather.service';
-import { DistrictWeatherInfo, EnZhMap } from '../interfaces';
+import { DistrictGraphData, DistrictMeshData, DistrictWeatherInfo, EnZhMap } from '../interfaces';
 @Component({
   selector: 'app-graphic',
   templateUrl: './graphic.component.html',
@@ -142,7 +142,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   onMousemove = (event: MouseEvent) => {
-    return 
+    return
     event.preventDefault()
     this.mouse = this.updateMousePosiion(event)
     this.raycaster.setFromCamera(this.mouse, this.camera)
@@ -271,24 +271,63 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     // this.scene.add(new CameraHelper(this.directionalLight.shadow.camera));
   }
 
-  appendEnglishNames = (districts: DistrictWeatherInfo[]) => {
-    const appendedDistricts = districts.map(district => {
-      const districtMap = this.weatherServer.districtsEnZhMap.find((map: EnZhMap) => {
-        const sameDistrictName = map.zhDistrict === district.district
-        const sameCityName = map.zhCity === district.city
-        return sameDistrictName && sameCityName
-      })
-      if (districtMap) {
-        district.enCity = districtMap.enCity
-        district.enDistrictAndCity = `${districtMap.enDistrict}_${districtMap.enCity}`
-      } else {
-        district.enCity = 'No English Name Found'
-        district.enDistrictAndCity = 'No English Name Found'
-        throw new Error("No English Name");
-      }
-      return district
+  createMeshesData = (graphsData: DistrictGraphData[]): DistrictMeshData[] => {
+    // let meshData:DistrictMeshData[] = graphsData.map((graphData):DistrictMeshData => {
+    //   const districtMap:EnZhMap|undefined = this.weatherServer.districtsEnZhMap.find((map: EnZhMap) => {
+    //     const sameDistrictName = map.zhDistrict === graphData.districtName
+    //     const sameCityName = map.zhCity === graphData.cityName
+    //     return sameDistrictName && sameCityName
+    //   })
+
+    //   const districtMeshData:DistrictMeshData = new DistrictMeshData()
+    //   if (districtMap) {
+    //     districtMeshData.enCityName = districtMap.enCity
+    //     districtMeshData.enDistrictName = districtMap.enDistrict
+    //     return districtMeshData
+    //   } else {
+    //     throw new Error("A Mesh Has No English Name");
+    //   }
+
+    //   // if (districtMap) {
+    //   //   district.enCity = districtMap.enCity
+    //   //   district.enDistrictAndCity = `${districtMap.enDistrict}_${districtMap.enCity}`
+    //   // } else {
+    //   //   district.enCity = 'No English Name Found'
+    //   //   district.enDistrictAndCity = 'No English Name Found'
+    //   //   throw new Error("No English Name");
+    //   // }
+    //   // return district
+    // })
+
+    // to generate meshdata's district name and city name
+    // to generate meshdata' tone and height
+
+    // create a seris of meshdata based on graph
+    let meshesData: DistrictMeshData[] = graphsData.map(graph => {
+      const meshdata = new DistrictMeshData()
+      meshdata.tone = graph.tone
+      meshdata.height = graph.height
+      meshdata.zhCityName = graph.cityName
+      meshdata.zhDistrictName = graph.districtName
+      return meshdata
     })
-    return appendedDistricts
+
+    // assign english name on meshdata
+    meshesData = meshesData.map(meshData => {
+      const mapMeshGraph = this.weatherServer.districtsEnZhMap.find(map => {
+        return map.zhCity === meshData.zhCityName && map.zhDistrict === meshData.zhDistrictName
+      })
+
+      if (mapMeshGraph) {
+        meshData.enCityName = mapMeshGraph.enCity
+        meshData.enDistrictName = mapMeshGraph.enDistrict
+        return meshData
+      } else {
+        throw new Error("A Mesh Has No English Name");
+      }
+    })
+    return meshesData
+    // return meshData
   }
 
   blendHexColors = (c0: string, c1: string, p: number) => {
@@ -301,6 +340,13 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     const highestTemp = +sortByTemp[sortByTemp.length - 1].topTempValue
     const lowestTemp = +sortByTemp[0].topTempValue
     return [highestTemp, lowestTemp]
+  }
+
+  mockGetToneRange = (WeatherInDistricts: DistrictGraphData[]) => {
+    const sortByTemp = WeatherInDistricts.sort((a, b) => +a.tone - +b.tone)
+    const maxTone = +sortByTemp[sortByTemp.length - 1].tone
+    const minTone = +sortByTemp[0].tone
+    return [maxTone, minTone]
   }
 
   getRainningRange = (WeatherInDistricts: DistrictWeatherInfo[]) => {
@@ -317,6 +363,10 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     })
   }
 
+  findDistrictMeshDataByName = (meshesData: DistrictMeshData[], mesh3d: Mesh) => {
+    return meshesData.find(meshData => `${meshData.enDistrictName}_${meshData.enCityName}` === mesh3d.name)
+  }
+
   getMaterialColorByRate = (highestTemp: number, lowestTemp: number, currentTemp: number): { r: number, g: number, b: number, } => {
     const colorRate = (currentTemp - highestTemp) / (lowestTemp - highestTemp)
     const hashColor = this.blendHexColors('#EEF588', '#70B7F3', colorRate)
@@ -326,7 +376,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   animateDistrictsHeight = (buffer: { mesh: Mesh, weatherInfo: DistrictWeatherInfo | undefined }[]) => {
     const weatherInfo: DistrictWeatherInfo[] = <DistrictWeatherInfo[]>buffer.filter(each => each.weatherInfo !== undefined).map(each => each.weatherInfo)
     const [highestRainning, lowestRainning] = this.getRainningRange(weatherInfo)
-    const districtMeshAnimations:any[] = []
+    const districtMeshAnimations: any[] = []
     for (let i = 0; i < buffer.length; i++) {
       if (buffer[i].weatherInfo) {
         const rainValue = buffer[i].weatherInfo?.rainValue || '0'
@@ -360,9 +410,9 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     const loader = new GLTFLoader()
     loader.loadAsync(this.ngLocation.prepareExternalUrl('/assets/taiwam15.gltf')).then(gltf => {
       gltf.scene.scale.set(0.1, 0.1, 0.1)
-      this.weatherServer.getWeatherInfo().subscribe(districtsWeatherInfo => {
+      this.weatherServer.getMockWeatherInfo().subscribe(graphData => {
         const districtsAnimationBuffer: { mesh: Mesh, weatherInfo: DistrictWeatherInfo | undefined }[] = []
-        this.setupMapMesh(gltf.scene, districtsWeatherInfo, districtsAnimationBuffer)
+        this.setupMapMesh(gltf.scene, graphData, districtsAnimationBuffer)
         // this.setupAndAnimateTexts(districtsAnimationBuffer)
         // this.animateDistrictsHeight(districtsAnimationBuffer)
       });
@@ -370,28 +420,33 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     })
   }
 
-  setupMapMesh = (scene: Group, districtsWeatherInfoWithoutEnglish: DistrictWeatherInfo[], districtsAnimationBuffer: { mesh: Mesh, weatherInfo: DistrictWeatherInfo | undefined }[]) => {
+  setupMapMesh = (scene: Group, graphData: DistrictGraphData[], districtsAnimationBuffer: { mesh: Mesh, weatherInfo: DistrictWeatherInfo | undefined }[]) => {
     const mapMaterial = new MeshPhongMaterial({ opacity: 1.0, transparent: true })
-    const distrcitsWeatherInfo = this.appendEnglishNames(districtsWeatherInfoWithoutEnglish)
-    const [highestTemp, lowestTemp] = this.getTempRange(distrcitsWeatherInfo)
+    const meshesData = this.createMeshesData(graphData)
+    
+    const [maxTone, minTone] = this.mockGetToneRange(graphData)
     this.taiwanMap = scene;
     scene.traverse(object3d => {
       const mesh: Mesh = (<Mesh>object3d)
       if (mesh.isMesh) {
         mesh.material = mapMaterial.clone();
         mesh.receiveShadow = true
-        const meshWeatherInfo = this.findWeatherInfoFromMeshName(distrcitsWeatherInfo, mesh)
-        if (meshWeatherInfo) {
+        const meshData = this.findDistrictMeshDataByName(meshesData, mesh)
+        console.log(meshData);
+        
+        if (meshData) {
           // meshWeatherInfo.rainValue = Math.random() < 0.2 ? Math.floor(Math.random() * Math.random() * Math.random() * 10) + '' : '0'
-          meshWeatherInfo.color = this.getMaterialColorByRate(highestTemp, lowestTemp, +meshWeatherInfo.topTempValue);
+          meshData.rgbColor = this.getMaterialColorByRate(maxTone, minTone, meshData.tone);
+          console.log(maxTone, minTone, meshData.rgbColor);
+          
           // @ts-ignore
-          mesh.material.color = meshWeatherInfo.color
-          this.sceneWeatherInfo.push(meshWeatherInfo)
+          mesh.material.color = meshData.rgbColor
+          // this.sceneWeatherInfo.push(meshData)
         } else {
           // @ts-ignore
           mesh.material.color = { r: 1, g: 1, b: 1 }
         }
-        districtsAnimationBuffer.push({ mesh: mesh, weatherInfo: meshWeatherInfo })
+        // districtsAnimationBuffer.push({ mesh: mesh, weatherInfo: meshData })
       }
     });
   }

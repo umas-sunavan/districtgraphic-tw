@@ -40,7 +40,7 @@ export interface DistrictWeatherInfo {
   color: { r: number, g: number, b: number }
 }
 
-export interface districtData {
+export interface DistrictGraphData {
   cityName: string,
   districtName: string,
   height: number,
@@ -54,13 +54,15 @@ export interface meshText {
   description: string,
 }
 
-export interface MeshData {
+export interface DistrictMeshData {
   meshName: string,
   zhCityName: string,
   enCityName: string,
   zhDistrictName: string,
   enDistrictName: string,
   mesh3d: Mesh,
+  tone: number,
+  height: number,
   rgbColor: { r: number, g: number, b: number },
 }
 
@@ -71,8 +73,43 @@ export interface dimensionName {
 }
 
 export interface extremumMeshData {
-  maximiumHeightData: MeshData,
-  minimiumHeightData: MeshData,
-  maximiumToneData: MeshData,
-  minimiumToneData: MeshData
+  maximiumHeightData: DistrictMeshData,
+  minimiumHeightData: DistrictMeshData,
+  maximiumToneData: DistrictMeshData,
+  minimiumToneData: DistrictMeshData
+}
+
+export class DistrictMeshData implements DistrictMeshData {
+  public meshName: string = ''
+  public zhCityName: string = ''
+  public enCityName: string = ''
+  public zhDistrictName: string = ''
+  public enDistrictName: string = ''
+  public mesh3d: Mesh = new Mesh()
+  public rgbColor: { r: number, g: number, b: number } = { r: 0, g: 0, b: 0 }
+  public tone: number = 0
+  public height: number = 0
+  construstor(init?: Partial<DistrictMeshData>) {
+    Object.assign(this, init);
+  }
+}
+
+export interface googleSheetRawData {
+  version: string, 
+  reqId: string, 
+  status: string, 
+  sig: string, 
+  table: {
+    cols: {
+      id: string;
+      label: string;
+      type: string;
+    }[];
+    rows: {
+      c: {
+        v: string;
+      }[];
+    }[];
+    parsedNumHeaders: number;
+  }
 }
