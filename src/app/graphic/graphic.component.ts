@@ -142,6 +142,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   onMousemove = (event: MouseEvent) => {
+    return 
     event.preventDefault()
     this.mouse = this.updateMousePosiion(event)
     this.raycaster.setFromCamera(this.mouse, this.camera)
@@ -200,7 +201,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.camera.aspect = this.canvas.nativeElement.offsetWidth / this.canvas.nativeElement.offsetHeight
     this.camera.position.set(5, 16, 1);
     this.camera.lookAt(4, 0, 0);
-    this.animateCamera()
+    // this.animateCamera()
   }
 
   animateCamera = () => {
@@ -362,8 +363,8 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       this.weatherServer.getWeatherInfo().subscribe(districtsWeatherInfo => {
         const districtsAnimationBuffer: { mesh: Mesh, weatherInfo: DistrictWeatherInfo | undefined }[] = []
         this.setupMapMesh(gltf.scene, districtsWeatherInfo, districtsAnimationBuffer)
-        this.setupAndAnimateTexts(districtsAnimationBuffer)
-        this.animateDistrictsHeight(districtsAnimationBuffer)
+        // this.setupAndAnimateTexts(districtsAnimationBuffer)
+        // this.animateDistrictsHeight(districtsAnimationBuffer)
       });
       this.scene.add(gltf.scene)
     })
@@ -532,7 +533,9 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   animate = () => {
-    requestAnimationFrame(this.animate);
+    if (this.renderer.info.render.frame < 2000) {
+      requestAnimationFrame(this.animate);
+    }
     this.renderer.render(this.scene, this.camera);
   };
 }
