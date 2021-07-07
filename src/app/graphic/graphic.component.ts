@@ -356,6 +356,13 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     return [highestTemp, lowestTemp]
   }
 
+  mockGetHeightRange = (meshData: DistrictMeshData[]) => {
+    const sortByTemp = meshData.sort((a, b) => +a.height - +b.height)
+    const maxHeight = +sortByTemp[sortByTemp.length - 1].height
+    const minHeight = +sortByTemp[0].height
+    return [maxHeight, minHeight]
+  }
+
   findWeatherInfoFromMeshName = (weatherInDistricts: DistrictWeatherInfo[], mesh: Mesh) => {
     return weatherInDistricts.find(weatherInDistrict => {
       const sameDistrictName = weatherInDistrict.enDistrictAndCity === mesh.name
@@ -411,19 +418,20 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     loader.loadAsync(this.ngLocation.prepareExternalUrl('/assets/taiwam15.gltf')).then(gltf => {
       gltf.scene.scale.set(0.1, 0.1, 0.1)
       this.weatherServer.getMockWeatherInfo().subscribe(graphData => {
-        const districtsAnimationBuffer: { mesh: Mesh, weatherInfo: DistrictWeatherInfo | undefined }[] = []
-        this.setupMapMesh(gltf.scene, graphData, districtsAnimationBuffer)
-        // this.setupAndAnimateTexts(districtsAnimationBuffer)
+        // const districtsAnimationBuffer: { mesh: Mesh, weatherInfo: DistrictWeatherInfo | undefined }[] = []
+        const mockAnimationBuffer: DistrictMeshData[] = []
+        this.setupMapMesh(gltf.scene, graphData, mockAnimationBuffer)
+        this.setupAndAnimateTexts(mockAnimationBuffer)
         // this.animateDistrictsHeight(districtsAnimationBuffer)
       });
       this.scene.add(gltf.scene)
     })
   }
 
-  setupMapMesh = (scene: Group, graphData: DistrictGraphData[], districtsAnimationBuffer: { mesh: Mesh, weatherInfo: DistrictWeatherInfo | undefined }[]) => {
+  setupMapMesh = (scene: Group, graphData: DistrictGraphData[], districtsAnimationBuffer: DistrictMeshData[]) => {
     const mapMaterial = new MeshPhongMaterial({ opacity: 1.0, transparent: true })
     const meshesData = this.createMeshesData(graphData)
-    
+
     const [maxTone, minTone] = this.mockGetToneRange(graphData)
     this.taiwanMap = scene;
     scene.traverse(object3d => {
@@ -432,57 +440,140 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         mesh.material = mapMaterial.clone();
         mesh.receiveShadow = true
         const meshData = this.findDistrictMeshDataByName(meshesData, mesh)
-        console.log(meshData);
-        
         if (meshData) {
           // meshWeatherInfo.rainValue = Math.random() < 0.2 ? Math.floor(Math.random() * Math.random() * Math.random() * 10) + '' : '0'
           meshData.rgbColor = this.getMaterialColorByRate(maxTone, minTone, meshData.tone);
           console.log(maxTone, minTone, meshData.rgbColor);
-          
           // @ts-ignore
           mesh.material.color = meshData.rgbColor
           // this.sceneWeatherInfo.push(meshData)
+          districtsAnimationBuffer.push(meshData)
+          meshData.mesh3d = mesh
         } else {
+          
+          // const missedMeshData = new DistrictMeshData()
+          // const meshName: string[] = mesh.name.split('_');
+          // missedMeshData.rgbColor = { r: 1, g: 1, b: 1 }
+          // missedMeshData.enDistrictName = meshName[0]
+          // missedMeshData.enCityName = meshName.slice(1).join('_')
+          // districtsAnimationBuffer.push(missedMeshData)
           // @ts-ignore
           mesh.material.color = { r: 1, g: 1, b: 1 }
+
         }
         // districtsAnimationBuffer.push({ mesh: mesh, weatherInfo: meshData })
       }
     });
+    // For these district not found mesh, we still push basic mesh data there
+
   }
 
-  setupAndAnimateTexts = (buffer: { mesh: Mesh, weatherInfo: DistrictWeatherInfo | undefined }[]) => {
-    const [hTDistrictMesh, hTWeatherInfo] = this.getSpecialMeshAndWeatherInfo('highest', 'temperature', this.sceneWeatherInfo)
-    const [lTDistricempMesh, lTWeatherInfo] = this.getSpecialMeshAndWeatherInfo('lowest', 'temperature', this.sceneWeatherInfo)
-    const [hRDistrictMesh, hRWeatherInfo] = this.getSpecialMeshAndWeatherInfo('highest', 'rainning', this.sceneWeatherInfo)
-    const weatherInfo: DistrictWeatherInfo[] = <DistrictWeatherInfo[]>buffer.filter(each => each.weatherInfo !== undefined).map(each => each.weatherInfo)
+  // getSpecialMeshAndWeatherInfo = (highOrLowest: string, dimension: string, sceneWeatherInfo: DistrictWeatherInfo[]): [mesh: Mesh, weatherInfo: DistrictWeatherInfo] => {
+  //   let specitalMesh: Mesh | undefined = undefined
+  //   let weatherInfo: DistrictWeatherInfo | undefined = undefined
+  //   if (dimension === 'temperature') {
+  //     const sortByDimension = sceneWeatherInfo.sort((a, b) => +b.topTempValue - +a.topTempValue)
+  //     const index = this.getArrayIndexBy(highOrLowest, sortByDimension)
+  //     specitalMesh = this.findMeshFromIndex(sortByDimension, index)
+  //     weatherInfo = sortByDimension[index]
+  //   } else if (dimension === 'rainning') {
+  //     const sortByDimension = sceneWeatherInfo.sort((a, b) => +b.rainValue - +a.rainValue)
+  //     const index = this.getArrayIndexBy(highOrLowest, sortByDimension)
+  //     specitalMesh = this.findMeshFromIndex(sortByDimension, index)
+  //     weatherInfo = sortByDimension[index]
+  //   }
+  //   if (specitalMesh && weatherInfo) {
+  //     return [specitalMesh, weatherInfo]
+  //   } else {
+  //     throw new Error(`cannot get the ${dimension} mesh`);
+  //   }
+  // }
+
+  mockGetArrayIndexBy = (extremumType: string, array: any[]): number => {
+    let position
+    if (extremumType === 'max') {
+      position = 0
+    } else if (extremumType === 'min') {
+      position = array.length - 1
+    }
+    return position || 0
+  }
+
+  mockFindMeshFromIndex = (array: DistrictMeshData[], index: number): Mesh => {
+    let retrunMesh: Mesh = new Mesh()
+    this.taiwanMap.traverse(mesh => {
+      if ((<Mesh>mesh).name === `${array[index].enDistrictName}+${array[index].enCityName}`) {
+        retrunMesh = (<Mesh>mesh)
+      }
+    })
+    if (retrunMesh) {
+      return retrunMesh
+    } else {
+      throw new Error("can't traverse to get mesh info");
+    }
+  }
+
+  getExtremumMesh = (extremumType: string, dimension: string, meshData: DistrictMeshData[]): DistrictMeshData => {
+    let extremumToneMesh: Mesh | undefined = undefined
+    let returnMeshData: DistrictMeshData | undefined = undefined
+    if (dimension === 'tone') {
+      const dataSortByDimension = meshData.sort((a, b) => +b.tone - +a.tone)
+      const extremumIndex = this.mockGetArrayIndexBy(extremumType, dataSortByDimension)
+      extremumToneMesh = this.mockFindMeshFromIndex(dataSortByDimension, extremumIndex)
+      returnMeshData = dataSortByDimension[extremumIndex]
+    } else if (dimension === 'height') {
+      const dataSortByDimension = meshData.sort((a, b) => +b.height - +a.height)
+      const extremumIndex = this.mockGetArrayIndexBy(extremumType, dataSortByDimension)
+      extremumToneMesh = this.mockFindMeshFromIndex(dataSortByDimension, extremumIndex)
+      returnMeshData = dataSortByDimension[extremumIndex]
+    }
+    if (returnMeshData) {
+      return returnMeshData
+    } else {
+      throw new Error(`cannot get the ${dimension} mesh`);
+    }
+  }
+
+  setupAndAnimateTexts = (buffer: DistrictMeshData[]) => {
+    const maxToneMesh = this.getExtremumMesh('max', 'tone', buffer);
+    const minToneMesh = this.getExtremumMesh('min', 'tone', buffer);
+    const maxHeightMesh = this.getExtremumMesh('max', 'height', buffer);
+    const minHeightMesh = this.getExtremumMesh('min', 'height', buffer);
+    console.log(maxToneMesh, minToneMesh, maxHeightMesh, minHeightMesh);
+
 
     const loader = new FontLoader()
     loader.load(this.ngLocation.prepareExternalUrl('/assets/jf-openhuninn-1.1_Regular_districts_words.json'), ((font) => {
-      const hTFontMeshTitle = this.createTextMesh(font, hTDistrictMesh, hTWeatherInfo.district, hTWeatherInfo.color)
-      const lTFontMeshTitle = this.createTextMesh(font, lTDistricempMesh, lTWeatherInfo.district, lTWeatherInfo.color)
-      const hRFontMeshTitle = this.createTextMesh(font, hRDistrictMesh, hRWeatherInfo.district, hRWeatherInfo.color)
-      const hTFontMeshSubtitle = this.createTextMesh(font, hTDistrictMesh, `最高溫 ${Math.round(+hTWeatherInfo.topTempValue * 10) / 10}度`, hTWeatherInfo.color)
-      const lTFontMeshSubtitle = this.createTextMesh(font, lTDistricempMesh, `最低溫 ${Math.round(+lTWeatherInfo.topTempValue * 10) / 10}度`, lTWeatherInfo.color)
-      const hRFontMeshSubtitle = this.createTextMesh(font, hRDistrictMesh, `最高降雨量 ${Math.round(+hRWeatherInfo.topTempValue * 10) / 10}ml`, hRWeatherInfo.color)
-      const hTFontMeshGroup = this.createTextMeshGroup(hTFontMeshTitle, hTFontMeshSubtitle)
-      const lTFontMeshGroup = this.createTextMeshGroup(lTFontMeshTitle, lTFontMeshSubtitle)
-      const hRFontMeshGroup = this.createTextMeshGroup(hRFontMeshTitle, hRFontMeshSubtitle)
-      this.animateText(hTFontMeshGroup, hTWeatherInfo, weatherInfo)
-      this.animateText(lTFontMeshGroup, lTWeatherInfo, weatherInfo)
-      this.animateText(hRFontMeshGroup, hRWeatherInfo, weatherInfo)
+      const maxToneTitleMesh = this.createTextMesh(font, maxToneMesh.mesh3d, maxToneMesh.zhDistrictName, maxToneMesh.rgbColor)
+      const minToneTitleMesh = this.createTextMesh(font, minToneMesh.mesh3d, minToneMesh.zhDistrictName, minToneMesh.rgbColor)
+      const maxHeightTitleMesh = this.createTextMesh(font, maxHeightMesh.mesh3d, maxHeightMesh.zhDistrictName, maxHeightMesh.rgbColor)
+      const minHeightTitleMesh = this.createTextMesh(font, minHeightMesh.mesh3d, minHeightMesh.zhDistrictName, minHeightMesh.rgbColor)
+      
+      const maxToneSubtitleMesh = this.createTextMesh(font, maxToneMesh.mesh3d, `最高溫 ${Math.round(+maxToneMesh.tone * 10) / 10}度`, maxToneMesh.rgbColor)
+      const minToneSubtitleMesh = this.createTextMesh(font, minToneMesh.mesh3d, `最低溫 ${Math.round(+minToneMesh.tone * 10) / 10}度`, minToneMesh.rgbColor)
+      const maxHeightSubtitle = this.createTextMesh(font, maxHeightMesh.mesh3d, `最高降雨量 ${Math.round(+maxHeightMesh.height * 10) / 10}mm`, maxHeightMesh.rgbColor)
+      const minHeightSubtitle = this.createTextMesh(font, minHeightMesh.mesh3d, `最高降雨量 ${Math.round(+minHeightMesh.height * 10) / 10}mm`, minHeightMesh.rgbColor)
+      
+      const maxToneMeshGroup = this.createTextMeshGroup(maxToneTitleMesh, maxToneSubtitleMesh)
+      const minToneMeshGroup = this.createTextMeshGroup(minToneTitleMesh, minToneSubtitleMesh)
+      const maxHeightMeshGroup = this.createTextMeshGroup(maxHeightTitleMesh, maxHeightSubtitle)
+      const minHeightMeshGroup = this.createTextMeshGroup(minHeightTitleMesh, minHeightSubtitle)
+      this.animateText(maxToneMeshGroup, maxToneMesh, buffer)
+      this.animateText(minToneMeshGroup, minToneMesh, buffer)
+      this.animateText(maxHeightMeshGroup, maxHeightMesh, buffer)
+      this.animateText(minHeightMeshGroup, minHeightMesh, buffer)
       this.orbitcontrols.addEventListener('change', () => {
-        [...hTFontMeshGroup.children, ...lTFontMeshGroup.children, ...hRFontMeshGroup.children].forEach(mesh => {
+        [...maxToneMeshGroup.children, ...minToneMeshGroup.children, ...maxHeightMeshGroup.children].forEach(mesh => {
           mesh.lookAt(this.camera.position)
         })
       })
     }))
   }
 
-  animateText = (fontMesh: Mesh | Group, weatherInfo: DistrictWeatherInfo, weatherInfos: DistrictWeatherInfo[]) => {
-    const [highestRainning, lowestRainning] = this.getRainningRange(weatherInfos)
+  animateText = (fontMesh: Mesh | Group, meshData: DistrictMeshData, meshesData: DistrictMeshData[]) => {
+    const [highestRainning, lowestRainning] = this.mockGetHeightRange(meshesData)
     const from = { scaleY: 1 }
-    const normalizedScale = (+weatherInfo.rainValue - lowestRainning) / (highestRainning - lowestRainning);
+    const normalizedScale = (+meshData.height - lowestRainning) / (highestRainning - lowestRainning);
     const to = { scaleY: normalizedScale * 20 + 1 }
     gsap.to(from, {
       ...to,
