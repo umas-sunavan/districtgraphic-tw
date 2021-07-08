@@ -36,6 +36,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   htmlTextStatus: string = 'flex'
   box: Object3D
   box2: Object3D
+  meshesData: DistrictMeshData[]
 
 
   constructor(
@@ -62,6 +63,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.textsMeshAndColor = []
     this.transparentFlag = false
     this.orbitcontrols = new OrbitControls(this.camera, this.renderer.domElement)
+    this.meshesData = []
 
     this.box = new Mesh()
     this.box2 = new Mesh()
@@ -380,6 +382,37 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     return this.convertHexTo0to1(hashColor)
   }
 
+  mockAnimateDistrictsHeight = () => {
+    const [maxHeight, minHeight] = this.mockGetHeightRange(this.meshesData)
+    const districtMeshAnimations: any[] = []
+    for (let i = 0; i < this.meshesData.length; i++) {
+        const height = this.meshesData[i].height || '0'
+        const from = { scaleY: 1 }
+        const normalizedScale = (+height - minHeight) / (maxHeight - minHeight);
+        const to = { scaleY: normalizedScale * 20 + 1 }
+        const districtMeshAnimation =
+          gsap.to(
+            from, {
+            ...to,
+            duration: 1,
+            onStart: (() => {
+              if (+height !== 0) {
+                this.meshesData[i].mesh3d.castShadow = true
+              }
+            }),
+            onUpdate: (() => {
+              this.meshesData[i].mesh3d.scale.setY(from.scaleY)
+              this.meshesData[i].mesh3d.position.setY(from.scaleY / 2)
+              this.textsMeshAndColor[0].districtMesh.position.setY(from.scaleY / 2)
+            }),
+            ease: Power1.easeInOut
+          }
+          ).delay(1).play()
+        districtMeshAnimations.push(districtMeshAnimation)
+    }
+  }
+
+
   animateDistrictsHeight = (buffer: { mesh: Mesh, weatherInfo: DistrictWeatherInfo | undefined }[]) => {
     const weatherInfo: DistrictWeatherInfo[] = <DistrictWeatherInfo[]>buffer.filter(each => each.weatherInfo !== undefined).map(each => each.weatherInfo)
     const [highestRainning, lowestRainning] = this.getRainningRange(weatherInfo)
@@ -419,18 +452,17 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       gltf.scene.scale.set(0.1, 0.1, 0.1)
       this.weatherServer.getMockWeatherInfo().subscribe(graphData => {
         // const districtsAnimationBuffer: { mesh: Mesh, weatherInfo: DistrictWeatherInfo | undefined }[] = []
-        const mockAnimationBuffer: DistrictMeshData[] = []
-        this.setupMapMesh(gltf.scene, graphData, mockAnimationBuffer)
-        this.setupAndAnimateTexts(mockAnimationBuffer)
-        // this.animateDistrictsHeight(districtsAnimationBuffer)
+        this.setupMapMesh(gltf.scene, graphData)
+        this.setupAndAnimateTexts()
+        this.mockAnimateDistrictsHeight()
       });
       this.scene.add(gltf.scene)
     })
   }
 
-  setupMapMesh = (scene: Group, graphData: DistrictGraphData[], districtsAnimationBuffer: DistrictMeshData[]) => {
+  setupMapMesh = (scene: Group, graphData: DistrictGraphData[]) => {
     const mapMaterial = new MeshPhongMaterial({ opacity: 1.0, transparent: true })
-    const meshesData = this.createMeshesData(graphData)
+    this.meshesData = this.createMeshesData(graphData)
 
     const [maxTone, minTone] = this.mockGetToneRange(graphData)
     this.taiwanMap = scene;
@@ -439,7 +471,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       if (mesh.isMesh) {
         mesh.material = mapMaterial.clone();
         mesh.receiveShadow = true
-        const meshData = this.findDistrictMeshDataByName(meshesData, mesh)
+        const meshData = this.findDistrictMeshDataByName(this.meshesData, mesh)
         if (meshData) {
           // meshWeatherInfo.rainValue = Math.random() < 0.2 ? Math.floor(Math.random() * Math.random() * Math.random() * 10) + '' : '0'
           meshData.rgbColor = this.getMaterialColorByRate(maxTone, minTone, meshData.tone);
@@ -447,7 +479,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
           // @ts-ignore
           mesh.material.color = meshData.rgbColor
           // this.sceneWeatherInfo.push(meshData)
-          districtsAnimationBuffer.push(meshData)
           meshData.mesh3d = mesh
         } else {
           
@@ -513,16 +544,16 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     }
   }
 
-  getExtremumMesh = (extremumType: string, dimension: string, meshData: DistrictMeshData[]): DistrictMeshData => {
+  getExtremumMesh = (extremumType: string, dimension: string, meshesData: DistrictMeshData[]): DistrictMeshData => {
     let extremumToneMesh: Mesh | undefined = undefined
-    let returnMeshData: DistrictMeshData | undefined = undefined
+    let returnMeshData: DistrictMeshData | undefined = undefined    
     if (dimension === 'tone') {
-      const dataSortByDimension = meshData.sort((a, b) => +b.tone - +a.tone)
+      const dataSortByDimension = meshesData.sort((a, b) => +b.tone - +a.tone)
       const extremumIndex = this.mockGetArrayIndexBy(extremumType, dataSortByDimension)
       extremumToneMesh = this.mockFindMeshFromIndex(dataSortByDimension, extremumIndex)
       returnMeshData = dataSortByDimension[extremumIndex]
     } else if (dimension === 'height') {
-      const dataSortByDimension = meshData.sort((a, b) => +b.height - +a.height)
+      const dataSortByDimension = meshesData.sort((a, b) => +b.height - +a.height)
       const extremumIndex = this.mockGetArrayIndexBy(extremumType, dataSortByDimension)
       extremumToneMesh = this.mockFindMeshFromIndex(dataSortByDimension, extremumIndex)
       returnMeshData = dataSortByDimension[extremumIndex]
@@ -534,11 +565,11 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     }
   }
 
-  setupAndAnimateTexts = (buffer: DistrictMeshData[]) => {
-    const maxToneMesh = this.getExtremumMesh('max', 'tone', buffer);
-    const minToneMesh = this.getExtremumMesh('min', 'tone', buffer);
-    const maxHeightMesh = this.getExtremumMesh('max', 'height', buffer);
-    const minHeightMesh = this.getExtremumMesh('min', 'height', buffer);
+  setupAndAnimateTexts = () => {
+    const maxToneMesh = this.getExtremumMesh('max', 'tone', this.meshesData);
+    const minToneMesh = this.getExtremumMesh('min', 'tone', this.meshesData);
+    const maxHeightMesh = this.getExtremumMesh('max', 'height', this.meshesData);
+    const minHeightMesh = this.getExtremumMesh('min', 'height', this.meshesData);
     console.log(maxToneMesh, minToneMesh, maxHeightMesh, minHeightMesh);
 
 
@@ -558,12 +589,12 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       const minToneMeshGroup = this.createTextMeshGroup(minToneTitleMesh, minToneSubtitleMesh)
       const maxHeightMeshGroup = this.createTextMeshGroup(maxHeightTitleMesh, maxHeightSubtitle)
       const minHeightMeshGroup = this.createTextMeshGroup(minHeightTitleMesh, minHeightSubtitle)
-      this.animateText(maxToneMeshGroup, maxToneMesh, buffer)
-      this.animateText(minToneMeshGroup, minToneMesh, buffer)
-      this.animateText(maxHeightMeshGroup, maxHeightMesh, buffer)
-      this.animateText(minHeightMeshGroup, minHeightMesh, buffer)
+      this.animateText(maxToneMeshGroup, maxToneMesh, this.meshesData)
+      this.animateText(minToneMeshGroup, minToneMesh, this.meshesData)
+      this.animateText(maxHeightMeshGroup, maxHeightMesh, this.meshesData)
+      this.animateText(minHeightMeshGroup, minHeightMesh, this.meshesData)
       this.orbitcontrols.addEventListener('change', () => {
-        [...maxToneMeshGroup.children, ...minToneMeshGroup.children, ...maxHeightMeshGroup.children].forEach(mesh => {
+        [...maxToneMeshGroup.children, ...minToneMeshGroup.children, ...maxHeightMeshGroup.children, ...minHeightMeshGroup.children].forEach(mesh => {
           mesh.lookAt(this.camera.position)
         })
       })
