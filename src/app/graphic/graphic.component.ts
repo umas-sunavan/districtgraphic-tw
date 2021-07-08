@@ -33,7 +33,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   intersactions: Intersection[] = []
   hoverDistrictWeatherInfo: DistrictMeshData | undefined
   htmlTextColor: string = '#666666'
-  htmlTextStatus: string = 'flex'
+  htmlTextStatus: string = 'select'
   box: Object3D
   box2: Object3D
   meshesData: DistrictMeshData[]
@@ -82,17 +82,17 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.setupMap()
   }
 
-  transparentMesh = (mesh: Mesh) => {
+  transparentMesh = (mesh: Mesh, opacity:number = 0.6) => {
     if (mesh.isMesh) {
       const currentMaterial: Material = (<Material>mesh.material)
       // @ts-ignore
       currentMaterial.color = { r: 1, g: 1, b: 1 };
-      currentMaterial.opacity = 0.6
+      currentMaterial.opacity = opacity
     }
   }
 
   paintMeshFrom = (array: DistrictMeshData[], meshToPaint: Mesh, paintNotFoundMesh: { r: number, g: number, b: number } = { r: 1, g: 1, b: 1 }) => {
-    const meshData = this.mockFindMeshDataByName(array, meshToPaint)
+    const meshData = this.mockFindDataByMeshName(array, meshToPaint)
     if (meshData) {
       if (meshData.rgbColor) {
         // @ts-ignore
@@ -118,17 +118,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     }
   }
 
-  hasIntersection = () => this.intersactions.length > 0
-
-  restoreMeshColor = (mesh: Mesh) => {
-    if (mesh.isMesh) {
-      this.paintMeshFrom(this.meshesData, mesh);
-      // @ts-ignore
-      mesh.material.opacity = 1
-    }
-  }
-
-  paintColorOntext = () => {
+  paintColorOnMapText = () => {
     this.textsMeshAndColor.forEach(({ textMesh, textHexColor: textColor }) => {
       // @ts-ignore
       textMesh.material.color = this.convertHexTo0to1(textColor)
@@ -146,39 +136,43 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         // if mouse over any mesh
         this.transparentFlag = true
         this.transparentAllMeshes()
-        this.intersactions.forEach(intersection => {
-          const hoverMesh = <Mesh>intersection.object
-          this.paintMeshFrom(this.meshesData, <Mesh>intersection.object);
-          // @ts-ignore
-          mesh.material.opacity = 1
-          const districtColor = this.findWeatherInfoFromMeshName(this.sceneWeatherInfo, hoverMesh)?.color
-          // if got color data then paint text
-          if (districtColor) {
-            this.htmlTextColor = '#' + this.convert0to1ToHex(districtColor || { r: 0.4, g: 0.4, b: 0.4 });
-            this.htmlTextStatus = 'show'
-          } else {
-            this.htmlTextStatus = 'none' // means the mesh has no data to show
-          }
-          this.updateMapText(hoverMesh)
-        })
+        const nearestToCamera: Intersection = this.intersactions.sort((a, b) => a.distance - b.distance)[0]
+        const meshOnhover = <Mesh>nearestToCamera.object
+        this.paintMeshFrom(this.meshesData, meshOnhover);
+        // @ts-ignore
+        meshOnhover.material.opacity = 1;
+        const districtColor = this.mockFindDataByMeshName(this.meshesData, meshOnhover)?.rgbColor;
+        // if got color data then paint text
+        if (districtColor) {
+          this.htmlTextColor = '#' + this.convert0to1ToHex(districtColor);
+          this.htmlTextStatus = 'show'
+        } else {
+          this.htmlTextStatus = 'none' // means the mesh has no data to show
+        }
+        this.updateMapText(meshOnhover)
+        this.meshDataToDisplayOnHtml(this.intersactions)
       } else if (this.transparentFlag) {
-        this.taiwanMap.children[0].traverse(object3d => {
-          this.restoreMeshColor(<Mesh>object3d)
-        })
-        this.paintColorOntext()
-        this.htmlTextStatus = 'select'
-        this.transparentFlag = false
+        this.onMouseLeaveMap(mapMeshes)
       }
-      this.meshDataToDisplayOnHtml(this.intersactions)
     }
   }
 
-  meshDataToDisplayOnHtml = (intersactions:Intersection[]) => {
-    intersactions.find(intersection => {
-    if ((<Mesh>intersection.object).isMesh) {
-      this.hoverDistrictWeatherInfo = this.mockFindMeshDataByName(this.meshesData, (<Mesh>intersection.object))
-    }
-  })
+  onMouseLeaveMap = (mapMeshes:Object3D) => {
+    mapMeshes.traverse(object3d => {
+      if ((<Mesh>object3d).isMesh) {
+        this.paintMeshFrom(this.meshesData, <Mesh>object3d);
+        // @ts-ignore
+        (<Mesh>object3d).material.opacity = 1
+      }
+    })
+    this.paintColorOnMapText()
+    this.htmlTextStatus = 'select'
+    this.transparentFlag = false
+  }
+
+  meshDataToDisplayOnHtml = (intersactions: Intersection[]) => {
+    const nearestCamera: Intersection = intersactions.sort((a, b) => a.distance - b.distance)[0]
+    this.hoverDistrictWeatherInfo = this.mockFindDataByMeshName(this.meshesData, <Mesh>nearestCamera.object)
   }
 
   updateMousePosiion = (event: MouseEvent): { x: number, y: number } => {
@@ -340,7 +334,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     })
   }
 
-  mockFindMeshDataByName = (meshesData: DistrictMeshData[], mesh: Mesh): DistrictMeshData | undefined => {
+  mockFindDataByMeshName = (meshesData: DistrictMeshData[], mesh: Mesh): DistrictMeshData | undefined => {
     return meshesData.find(meshData => `${meshData.enDistrictName}_${meshData.enCityName}` === mesh.name)
   }
 
@@ -593,7 +587,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     return fontMesh
   }
 
-  convert0to1ToHex = (color: { r: number, g: number, b: number }): string => {
+  convert0to1ToHex = (color: { r: number, g: number, b: number } = { r: 0.4, g: 0.4, b: 0.4 }): string => {
     const rHex: string = Math.floor((color.r * 256)).toString(16)
     const gHex: string = Math.floor(color.g * 256).toString(16)
     const bHex: string = Math.floor(color.b * 256).toString(16)
@@ -654,7 +648,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   animate = () => {
-    if (this.renderer.info.render.frame < 200) {
+    if (this.renderer.info.render.frame < 2000) {
       requestAnimationFrame(this.animate);
     }
     this.renderer.render(this.scene, this.camera);
