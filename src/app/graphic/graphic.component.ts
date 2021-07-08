@@ -96,12 +96,14 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     scene.traverse(object3d => this.transparentMesh(<Mesh>object3d, opacity))
   }
 
-  paintMapTextFrom = (mesh: Mesh) => {
-    const textAboveMesh = this.textsMeshAndColor.filter(text => text.textMesh.name.includes(mesh.name))
+  paintMapTextFrom = (hoverMesh: Mesh) => {
+    const textAboveMesh = this.textsMeshAndColor.filter(text => text.textMesh.name.includes(hoverMesh.name))    
     if (textAboveMesh.length !== 0) {
       // @ts-ignore 
       textAboveMesh.forEach(foundText => foundText.textMesh.material.color = this.convertHexTo0to1(foundText.textHexColor))
-    } else { console.error('no mesh text to color!') }
+    } else { 
+      // no text above the hovered mesh
+    }
   }
 
   paintColorOnMapText = () => {
@@ -120,15 +122,15 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       const intersactions = this.raycaster.intersectObjects(mapMeshes.children, true)
       if (intersactions.length > 0) {
         this.mouseHoveAnyMesh = true
-        this.onMouseHoveringMap(mapMeshes, intersactions)
+        this.onMouseHoveringLand(mapMeshes, intersactions)
       } else if (this.mouseHoveAnyMesh) {
         this.mouseHoveAnyMesh = false
-        this.onMouseLeavingMap(mapMeshes)
+        this.onMouseLeavingLand(mapMeshes)
       }
     } else { console.error("no secene object") }
   }
 
-  onMouseHoveringMap = (mapMeshes: Object3D, intersactions: Intersection[]) => {
+  onMouseHoveringLand = (mapMeshes: Object3D, intersactions: Intersection[]) => {
     this.transparentMeshes(mapMeshes)
     this.textsMeshAndColor.forEach(textMesh => this.transparentMesh(textMesh.textMesh))
     const nearestToCamera: Intersection = intersactions.sort((a, b) => a.distance - b.distance)[0]
@@ -145,7 +147,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.updateTextOnHtml(intersactions)
   }
 
-  onMouseLeavingMap = (mapMeshes: Object3D) => {
+  onMouseLeavingLand = (mapMeshes: Object3D) => {
     mapMeshes.traverse(object3d => {
       if ((<Mesh>object3d).isMesh) {
         this.paintMeshFrom(this.meshesData, <Mesh>object3d);
@@ -303,7 +305,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
   getMaterialColorByRate = (highestTemp: number, lowestTemp: number, currentTemp: number): { r: number, g: number, b: number, } => {
     const colorRate = (currentTemp - highestTemp) / (lowestTemp - highestTemp)
-    const hashColor = this.blendHexColors('#EEF588', '#70B7F3', colorRate)
+    const hashColor = this.blendHexColors('#EEF588', '#70a7f3', colorRate)
     return this.convertHexTo0to1(hashColor)
   }
 
@@ -451,16 +453,18 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
       this.orbitcontrols.addEventListener('change', () => {
         this.faceCamera([
-          maxToneMeshGroup,
-          minToneMeshGroup,
-          maxHeightMeshGroup,
+          ...maxToneMeshGroup.children,
+          ...minToneMeshGroup.children,
+          ...maxHeightMeshGroup.children,
           // minHeightMeshGroup,
         ])
       })
     }))
   }
 
-  faceCamera = (meshes: Group[]) => meshes.forEach(mesh => mesh.lookAt(this.camera.position))
+  faceCamera = (objects: Object3D[]) => {
+    objects.forEach(object => object.lookAt(this.camera.position))
+  }
 
   animateText = (fontMesh: Mesh | Group, meshData: DistrictMeshData) => {
     const [highestRainning, lowestRainning] = this.mockGetHeightRange(this.meshesData)
