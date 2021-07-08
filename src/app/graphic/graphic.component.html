@@ -4,18 +4,18 @@
         台灣天氣資訊圖像化
     </h1>
     <div class="district-name-container" *ngIf="this.hoverDistrictWeatherInfo">
-        <h2 class="zh">{{this.hoverDistrictWeatherInfo.district}}</h2>
-        <h2 class="en">{{this.hoverDistrictWeatherInfo.enDistrictAndCity.split("_")[0]}}</h2>
+        <h2 class="zh">{{this.hoverDistrictWeatherInfo.zhDistrictName}}</h2>
+        <h2 class="en">{{this.hoverDistrictWeatherInfo.enDistrictName}}</h2>
     </div>
     <div class="city-name-container" *ngIf="this.hoverDistrictWeatherInfo">
-        <h3 class="zh">{{this.hoverDistrictWeatherInfo.city}}</h3>
-        <h3 class="en">{{this.hoverDistrictWeatherInfo.enCity}}</h3>
+        <h3 class="zh">{{this.hoverDistrictWeatherInfo.zhCityName}}</h3>
+        <h3 class="en">{{this.hoverDistrictWeatherInfo.enCityName.split("_").join()}}</h3>
     </div>
     <div class="statistics-container" *ngIf="this.hoverDistrictWeatherInfo">
         <small class="zh">今日降雨量</small>
-        <h3 class="en">{{this.hoverDistrictWeatherInfo.rainValue | number: '1.1-1'}}</h3>
+        <h3 class="en">{{this.hoverDistrictWeatherInfo.height | number: '1.1-1'}}</h3>
         <small class="zh">本日最高溫</small>
-        <h3 class="en">{{this.hoverDistrictWeatherInfo.topTempValue | number: '1.1-1'}}</h3>
+        <h3 class="en">{{this.hoverDistrictWeatherInfo.tone | number: '1.1-1'}}</h3>
     </div>
 </div>
 <div [ngStyle]="{'color': '#666666', display: htmlTextStatus === 'none' ? 'flex':'none'}"

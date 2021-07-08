@@ -31,7 +31,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   orbitcontrols: OrbitControls
   textsMeshAndColor: { textMesh: Mesh, districtMesh: Mesh, textHexColor: string }[]
   intersactions: Intersection[] = []
-  hoverDistrictWeatherInfo: DistrictWeatherInfo | undefined
+  hoverDistrictWeatherInfo: DistrictMeshData | undefined
   htmlTextColor: string = '#666666'
   htmlTextStatus: string = 'flex'
   box: Object3D
@@ -91,18 +91,16 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     }
   }
 
-  paintMeshFrom = (array: DistrictWeatherInfo[], meshToPaint: Mesh, paintNotFoundMesh?: { r: number, g: number, b: number }) => {
-    const weatherInfo = this.findWeatherInfoFromMeshName(array, meshToPaint)
-    if (weatherInfo) {
-      if (weatherInfo.color) {
+  paintMeshFrom = (array: DistrictMeshData[], meshToPaint: Mesh, paintNotFoundMesh: { r: number, g: number, b: number } = { r: 1, g: 1, b: 1 }) => {
+    const meshData = this.mockFindMeshDataByName(array, meshToPaint)
+    if (meshData) {
+      if (meshData.rgbColor) {
         // @ts-ignore
-        meshToPaint.material.color = weatherInfo.color
+        meshToPaint.material.color = meshData.rgbColor
       }
     } else {
-      if (paintNotFoundMesh) {
-        // @ts-ignore
-        meshToPaint.material.color = paintNotFoundMesh
-      }
+      // @ts-ignore
+      meshToPaint.material.color = paintNotFoundMesh
     }
   }
 
@@ -110,12 +108,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.scene.traverse(object3d => {
       this.transparentMesh((<Mesh>object3d))
     })
-  }
-
-  paintColorOnMesh = (paintBasedOn: DistrictWeatherInfo[], mesh: Mesh) => {
-    this.paintMeshFrom(paintBasedOn, mesh);
-    // @ts-ignore
-    mesh.material.opacity = 1
   }
 
   updateMapText = (mesh: Mesh) => {
@@ -130,7 +122,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
   restoreMeshColor = (mesh: Mesh) => {
     if (mesh.isMesh) {
-      this.paintMeshFrom(this.sceneWeatherInfo, mesh, { r: 1, g: 1, b: 1 });
+      this.paintMeshFrom(this.meshesData, mesh);
       // @ts-ignore
       mesh.material.opacity = 1
     }
@@ -144,18 +136,21 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   onMousemove = (event: MouseEvent) => {
-    return
     event.preventDefault()
     this.mouse = this.updateMousePosiion(event)
     this.raycaster.setFromCamera(this.mouse, this.camera)
-    if (this.taiwanMap.children[0]) {
-      this.intersactions = this.raycaster.intersectObjects(this.taiwanMap.children[0].children, true)
+    const mapMeshes = this.taiwanMap.children[0]
+    if (mapMeshes) {
+      this.intersactions = this.raycaster.intersectObjects(mapMeshes.children, true)
       if (this.intersactions.length > 0) {
+        // if mouse over any mesh
         this.transparentFlag = true
         this.transparentAllMeshes()
         this.intersactions.forEach(intersection => {
           const hoverMesh = <Mesh>intersection.object
-          this.paintColorOnMesh(this.sceneWeatherInfo, hoverMesh)
+          this.paintMeshFrom(this.meshesData, <Mesh>intersection.object);
+          // @ts-ignore
+          mesh.material.opacity = 1
           const districtColor = this.findWeatherInfoFromMeshName(this.sceneWeatherInfo, hoverMesh)?.color
           // if got color data then paint text
           if (districtColor) {
@@ -174,12 +169,16 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         this.htmlTextStatus = 'select'
         this.transparentFlag = false
       }
-      this.intersactions.find(intersection => {
-        if ((<Mesh>intersection.object).isMesh) {
-          this.hoverDistrictWeatherInfo = this.findWeatherInfoFromMeshName(this.sceneWeatherInfo, (<Mesh>intersection.object))
-        }
-      })
+      this.meshDataToDisplayOnHtml(this.intersactions)
     }
+  }
+
+  meshDataToDisplayOnHtml = (intersactions:Intersection[]) => {
+    intersactions.find(intersection => {
+    if ((<Mesh>intersection.object).isMesh) {
+      this.hoverDistrictWeatherInfo = this.mockFindMeshDataByName(this.meshesData, (<Mesh>intersection.object))
+    }
+  })
   }
 
   updateMousePosiion = (event: MouseEvent): { x: number, y: number } => {
@@ -274,36 +273,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   createMeshesData = (graphsData: DistrictGraphData[]): DistrictMeshData[] => {
-    // let meshData:DistrictMeshData[] = graphsData.map((graphData):DistrictMeshData => {
-    //   const districtMap:EnZhMap|undefined = this.weatherServer.districtsEnZhMap.find((map: EnZhMap) => {
-    //     const sameDistrictName = map.zhDistrict === graphData.districtName
-    //     const sameCityName = map.zhCity === graphData.cityName
-    //     return sameDistrictName && sameCityName
-    //   })
-
-    //   const districtMeshData:DistrictMeshData = new DistrictMeshData()
-    //   if (districtMap) {
-    //     districtMeshData.enCityName = districtMap.enCity
-    //     districtMeshData.enDistrictName = districtMap.enDistrict
-    //     return districtMeshData
-    //   } else {
-    //     throw new Error("A Mesh Has No English Name");
-    //   }
-
-    //   // if (districtMap) {
-    //   //   district.enCity = districtMap.enCity
-    //   //   district.enDistrictAndCity = `${districtMap.enDistrict}_${districtMap.enCity}`
-    //   // } else {
-    //   //   district.enCity = 'No English Name Found'
-    //   //   district.enDistrictAndCity = 'No English Name Found'
-    //   //   throw new Error("No English Name");
-    //   // }
-    //   // return district
-    // })
-
-    // to generate meshdata's district name and city name
-    // to generate meshdata' tone and height
-
     // create a seris of meshdata based on graph
     let meshesData: DistrictMeshData[] = graphsData.map(graph => {
       const meshdata = new DistrictMeshData()
@@ -329,7 +298,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       }
     })
     return meshesData
-    // return meshData
   }
 
   blendHexColors = (c0: string, c1: string, p: number) => {
@@ -372,6 +340,10 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     })
   }
 
+  mockFindMeshDataByName = (meshesData: DistrictMeshData[], mesh: Mesh): DistrictMeshData | undefined => {
+    return meshesData.find(meshData => `${meshData.enDistrictName}_${meshData.enCityName}` === mesh.name)
+  }
+
   findDistrictMeshDataByName = (meshesData: DistrictMeshData[], mesh3d: Mesh) => {
     return meshesData.find(meshData => `${meshData.enDistrictName}_${meshData.enCityName}` === mesh3d.name)
   }
@@ -386,29 +358,29 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     const [maxHeight, minHeight] = this.mockGetHeightRange(this.meshesData)
     const districtMeshAnimations: any[] = []
     for (let i = 0; i < this.meshesData.length; i++) {
-        const height = this.meshesData[i].height || '0'
-        const from = { scaleY: 1 }
-        const normalizedScale = (+height - minHeight) / (maxHeight - minHeight);
-        const to = { scaleY: normalizedScale * 20 + 1 }
-        const districtMeshAnimation =
-          gsap.to(
-            from, {
-            ...to,
-            duration: 1,
-            onStart: (() => {
-              if (+height !== 0) {
-                this.meshesData[i].mesh3d.castShadow = true
-              }
-            }),
-            onUpdate: (() => {
-              this.meshesData[i].mesh3d.scale.setY(from.scaleY)
-              this.meshesData[i].mesh3d.position.setY(from.scaleY / 2)
-              this.textsMeshAndColor[0].districtMesh.position.setY(from.scaleY / 2)
-            }),
-            ease: Power1.easeInOut
-          }
-          ).delay(1).play()
-        districtMeshAnimations.push(districtMeshAnimation)
+      const height = this.meshesData[i].height || '0'
+      const from = { scaleY: 1 }
+      const normalizedScale = (+height - minHeight) / (maxHeight - minHeight);
+      const to = { scaleY: normalizedScale * 20 + 1 }
+      const districtMeshAnimation =
+        gsap.to(
+          from, {
+          ...to,
+          duration: 1,
+          onStart: (() => {
+            if (+height !== 0) {
+              this.meshesData[i].mesh3d.castShadow = true
+            }
+          }),
+          onUpdate: (() => {
+            this.meshesData[i].mesh3d.scale.setY(from.scaleY)
+            this.meshesData[i].mesh3d.position.setY(from.scaleY / 2)
+            this.textsMeshAndColor[0].districtMesh.position.setY(from.scaleY / 2)
+          }),
+          ease: Power1.easeInOut
+        }
+        ).delay(1).play()
+      districtMeshAnimations.push(districtMeshAnimation)
     }
   }
 
@@ -451,7 +423,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     loader.loadAsync(this.ngLocation.prepareExternalUrl('/assets/taiwam15.gltf')).then(gltf => {
       gltf.scene.scale.set(0.1, 0.1, 0.1)
       this.weatherServer.getMockWeatherInfo().subscribe(graphData => {
-        // const districtsAnimationBuffer: { mesh: Mesh, weatherInfo: DistrictWeatherInfo | undefined }[] = []
         this.setupMapMesh(gltf.scene, graphData)
         this.setupAndAnimateTexts()
         this.mockAnimateDistrictsHeight()
@@ -473,52 +444,19 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         mesh.receiveShadow = true
         const meshData = this.findDistrictMeshDataByName(this.meshesData, mesh)
         if (meshData) {
-          // meshWeatherInfo.rainValue = Math.random() < 0.2 ? Math.floor(Math.random() * Math.random() * Math.random() * 10) + '' : '0'
           meshData.rgbColor = this.getMaterialColorByRate(maxTone, minTone, meshData.tone);
           console.log(maxTone, minTone, meshData.rgbColor);
           // @ts-ignore
           mesh.material.color = meshData.rgbColor
-          // this.sceneWeatherInfo.push(meshData)
           meshData.mesh3d = mesh
         } else {
-          
-          // const missedMeshData = new DistrictMeshData()
-          // const meshName: string[] = mesh.name.split('_');
-          // missedMeshData.rgbColor = { r: 1, g: 1, b: 1 }
-          // missedMeshData.enDistrictName = meshName[0]
-          // missedMeshData.enCityName = meshName.slice(1).join('_')
-          // districtsAnimationBuffer.push(missedMeshData)
           // @ts-ignore
           mesh.material.color = { r: 1, g: 1, b: 1 }
 
         }
-        // districtsAnimationBuffer.push({ mesh: mesh, weatherInfo: meshData })
       }
     });
-    // For these district not found mesh, we still push basic mesh data there
-
   }
-
-  // getSpecialMeshAndWeatherInfo = (highOrLowest: string, dimension: string, sceneWeatherInfo: DistrictWeatherInfo[]): [mesh: Mesh, weatherInfo: DistrictWeatherInfo] => {
-  //   let specitalMesh: Mesh | undefined = undefined
-  //   let weatherInfo: DistrictWeatherInfo | undefined = undefined
-  //   if (dimension === 'temperature') {
-  //     const sortByDimension = sceneWeatherInfo.sort((a, b) => +b.topTempValue - +a.topTempValue)
-  //     const index = this.getArrayIndexBy(highOrLowest, sortByDimension)
-  //     specitalMesh = this.findMeshFromIndex(sortByDimension, index)
-  //     weatherInfo = sortByDimension[index]
-  //   } else if (dimension === 'rainning') {
-  //     const sortByDimension = sceneWeatherInfo.sort((a, b) => +b.rainValue - +a.rainValue)
-  //     const index = this.getArrayIndexBy(highOrLowest, sortByDimension)
-  //     specitalMesh = this.findMeshFromIndex(sortByDimension, index)
-  //     weatherInfo = sortByDimension[index]
-  //   }
-  //   if (specitalMesh && weatherInfo) {
-  //     return [specitalMesh, weatherInfo]
-  //   } else {
-  //     throw new Error(`cannot get the ${dimension} mesh`);
-  //   }
-  // }
 
   mockGetArrayIndexBy = (extremumType: string, array: any[]): number => {
     let position
@@ -546,7 +484,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
   getExtremumMesh = (extremumType: string, dimension: string, meshesData: DistrictMeshData[]): DistrictMeshData => {
     let extremumToneMesh: Mesh | undefined = undefined
-    let returnMeshData: DistrictMeshData | undefined = undefined    
+    let returnMeshData: DistrictMeshData | undefined = undefined
     if (dimension === 'tone') {
       const dataSortByDimension = meshesData.sort((a, b) => +b.tone - +a.tone)
       const extremumIndex = this.mockGetArrayIndexBy(extremumType, dataSortByDimension)
@@ -578,23 +516,29 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       const maxToneTitleMesh = this.createTextMesh(font, maxToneMesh.mesh3d, maxToneMesh.zhDistrictName, maxToneMesh.rgbColor)
       const minToneTitleMesh = this.createTextMesh(font, minToneMesh.mesh3d, minToneMesh.zhDistrictName, minToneMesh.rgbColor)
       const maxHeightTitleMesh = this.createTextMesh(font, maxHeightMesh.mesh3d, maxHeightMesh.zhDistrictName, maxHeightMesh.rgbColor)
-      const minHeightTitleMesh = this.createTextMesh(font, minHeightMesh.mesh3d, minHeightMesh.zhDistrictName, minHeightMesh.rgbColor)
-      
+      // const minHeightTitleMesh = this.createTextMesh(font, minHeightMesh.mesh3d, minHeightMesh.zhDistrictName, minHeightMesh.rgbColor)
+
       const maxToneSubtitleMesh = this.createTextMesh(font, maxToneMesh.mesh3d, `最高溫 ${Math.round(+maxToneMesh.tone * 10) / 10}度`, maxToneMesh.rgbColor)
       const minToneSubtitleMesh = this.createTextMesh(font, minToneMesh.mesh3d, `最低溫 ${Math.round(+minToneMesh.tone * 10) / 10}度`, minToneMesh.rgbColor)
       const maxHeightSubtitle = this.createTextMesh(font, maxHeightMesh.mesh3d, `最高降雨量 ${Math.round(+maxHeightMesh.height * 10) / 10}mm`, maxHeightMesh.rgbColor)
-      const minHeightSubtitle = this.createTextMesh(font, minHeightMesh.mesh3d, `最高降雨量 ${Math.round(+minHeightMesh.height * 10) / 10}mm`, minHeightMesh.rgbColor)
-      
+      // const minHeightSubtitle = this.createTextMesh(font, minHeightMesh.mesh3d, `最高降雨量 ${Math.round(+minHeightMesh.height * 10) / 10}mm`, minHeightMesh.rgbColor)
+
       const maxToneMeshGroup = this.createTextMeshGroup(maxToneTitleMesh, maxToneSubtitleMesh)
       const minToneMeshGroup = this.createTextMeshGroup(minToneTitleMesh, minToneSubtitleMesh)
       const maxHeightMeshGroup = this.createTextMeshGroup(maxHeightTitleMesh, maxHeightSubtitle)
-      const minHeightMeshGroup = this.createTextMeshGroup(minHeightTitleMesh, minHeightSubtitle)
+      // const minHeightMeshGroup = this.createTextMeshGroup(minHeightTitleMesh, minHeightSubtitle)
       this.animateText(maxToneMeshGroup, maxToneMesh, this.meshesData)
       this.animateText(minToneMeshGroup, minToneMesh, this.meshesData)
       this.animateText(maxHeightMeshGroup, maxHeightMesh, this.meshesData)
-      this.animateText(minHeightMeshGroup, minHeightMesh, this.meshesData)
+      // this.animateText(minHeightMeshGroup, minHeightMesh, this.meshesData)
+
       this.orbitcontrols.addEventListener('change', () => {
-        [...maxToneMeshGroup.children, ...minToneMeshGroup.children, ...maxHeightMeshGroup.children, ...minHeightMeshGroup.children].forEach(mesh => {
+        [
+          ...maxToneMeshGroup.children,
+          ...minToneMeshGroup.children,
+          ...maxHeightMeshGroup.children,
+          // ...minHeightMeshGroup.children
+        ].forEach(mesh => {
           mesh.lookAt(this.camera.position)
         })
       })
@@ -710,7 +654,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   animate = () => {
-    if (this.renderer.info.render.frame < 2000) {
+    if (this.renderer.info.render.frame < 200) {
       requestAnimationFrame(this.animate);
     }
     this.renderer.render(this.scene, this.camera);
