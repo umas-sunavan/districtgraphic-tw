@@ -24,19 +24,15 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   raycaster: Raycaster
   mouse: { x: number, y: number }
   taiwanMap: Object3D
-  whiteBorderMaterial: MeshBasicMaterial
-  whiteBorder: Mesh
-  sceneWeatherInfo: DistrictWeatherInfo[]
-  transparentFlag: boolean
+  mouseHoveAnyMesh: boolean
   orbitcontrols: OrbitControls
   textsMeshAndColor: { textMesh: Mesh, districtMesh: Mesh, textHexColor: string }[]
-  intersactions: Intersection[] = []
-  hoverDistrictWeatherInfo: DistrictMeshData | undefined
+  meshDataOnHtml: DistrictMeshData | undefined
   htmlTextColor: string = '#666666'
-  htmlTextStatus: string = 'select'
+  mouseHoverDetalessMesh: boolean = false
+  meshesData: DistrictMeshData[]
   box: Object3D
   box2: Object3D
-  meshesData: DistrictMeshData[]
 
 
   constructor(
@@ -57,11 +53,8 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.raycaster = new Raycaster()
     this.mouse = { x: 0, y: 0 }
     this.taiwanMap = new Object3D()
-    this.whiteBorderMaterial = new MeshLambertMaterial({ color: 0xffffff, side: FrontSide, opacity: 0.7, transparent: true })
-    this.whiteBorder = new Mesh()
-    this.sceneWeatherInfo = []
     this.textsMeshAndColor = []
-    this.transparentFlag = false
+    this.mouseHoveAnyMesh = false
     this.orbitcontrols = new OrbitControls(this.camera, this.renderer.domElement)
     this.meshesData = []
 
@@ -78,11 +71,11 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.setupCamera()
     this.setupScene()
     this.setupLight()
-    // this.setupBox()
+    // this.setupBoxForTest()
     this.setupMap()
   }
 
-  transparentMesh = (mesh: Mesh, opacity:number = 0.6) => {
+  transparentMesh = (mesh: Mesh, opacity: number = 0.6) => {
     if (mesh.isMesh) {
       const currentMaterial: Material = (<Material>mesh.material)
       // @ts-ignore
@@ -93,29 +86,22 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
   paintMeshFrom = (array: DistrictMeshData[], meshToPaint: Mesh, paintNotFoundMesh: { r: number, g: number, b: number } = { r: 1, g: 1, b: 1 }) => {
     const meshData = this.mockFindDataByMeshName(array, meshToPaint)
-    if (meshData) {
-      if (meshData.rgbColor) {
-        // @ts-ignore
-        meshToPaint.material.color = meshData.rgbColor
-      }
-    } else {
+    if (meshData && meshData.rgbColor) {
       // @ts-ignore
-      meshToPaint.material.color = paintNotFoundMesh
+      meshToPaint.material.color = meshData && meshData.rgbColor ? meshData.rgbColor : paintNotFoundMesh
     }
   }
 
-  transparentAllMeshes = () => {
-    this.scene.traverse(object3d => {
-      this.transparentMesh((<Mesh>object3d))
-    })
+  transparentMeshes = (scene: Object3D, opacity: number = 0.6) => {
+    scene.traverse(object3d => this.transparentMesh(<Mesh>object3d, opacity))
   }
 
-  updateMapText = (mesh: Mesh) => {
+  paintMapTextFrom = (mesh: Mesh) => {
     const textAboveMesh = this.textsMeshAndColor.filter(text => text.textMesh.name.includes(mesh.name))
     if (textAboveMesh.length !== 0) {
       // @ts-ignore 
       textAboveMesh.forEach(foundText => foundText.textMesh.material.color = this.convertHexTo0to1(foundText.textHexColor))
-    }
+    } else { console.error('no mesh text to color!') }
   }
 
   paintColorOnMapText = () => {
@@ -131,33 +117,35 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.raycaster.setFromCamera(this.mouse, this.camera)
     const mapMeshes = this.taiwanMap.children[0]
     if (mapMeshes) {
-      this.intersactions = this.raycaster.intersectObjects(mapMeshes.children, true)
-      if (this.intersactions.length > 0) {
-        // if mouse over any mesh
-        this.transparentFlag = true
-        this.transparentAllMeshes()
-        const nearestToCamera: Intersection = this.intersactions.sort((a, b) => a.distance - b.distance)[0]
-        const meshOnhover = <Mesh>nearestToCamera.object
-        this.paintMeshFrom(this.meshesData, meshOnhover);
-        // @ts-ignore
-        meshOnhover.material.opacity = 1;
-        const districtColor = this.mockFindDataByMeshName(this.meshesData, meshOnhover)?.rgbColor;
-        // if got color data then paint text
-        if (districtColor) {
-          this.htmlTextColor = '#' + this.convert0to1ToHex(districtColor);
-          this.htmlTextStatus = 'show'
-        } else {
-          this.htmlTextStatus = 'none' // means the mesh has no data to show
-        }
-        this.updateMapText(meshOnhover)
-        this.meshDataToDisplayOnHtml(this.intersactions)
-      } else if (this.transparentFlag) {
-        this.onMouseLeaveMap(mapMeshes)
+      const intersactions = this.raycaster.intersectObjects(mapMeshes.children, true)
+      if (intersactions.length > 0) {
+        this.mouseHoveAnyMesh = true
+        this.onMouseHoveringMap(mapMeshes, intersactions)
+      } else if (this.mouseHoveAnyMesh) {
+        this.mouseHoveAnyMesh = false
+        this.onMouseLeavingMap(mapMeshes)
       }
-    }
+    } else { console.error("no secene object") }
   }
 
-  onMouseLeaveMap = (mapMeshes:Object3D) => {
+  onMouseHoveringMap = (mapMeshes: Object3D, intersactions: Intersection[]) => {
+    this.transparentMeshes(mapMeshes)
+    this.textsMeshAndColor.forEach(textMesh => this.transparentMesh(textMesh.textMesh))
+    const nearestToCamera: Intersection = intersactions.sort((a, b) => a.distance - b.distance)[0]
+    const meshOnHover = <Mesh>nearestToCamera.object
+    this.paintMeshFrom(this.meshesData, meshOnHover);
+    // @ts-ignore
+    meshOnHover.material.opacity = 1;
+    const districtColor = this.mockFindDataByMeshName(this.meshesData, meshOnHover)?.rgbColor;
+    if (districtColor) {
+      this.htmlTextColor = '#' + this.convert0to1ToHex(districtColor);
+      this.mouseHoverDetalessMesh = false
+    } else { this.mouseHoverDetalessMesh = true }
+    this.paintMapTextFrom(meshOnHover)
+    this.updateTextOnHtml(intersactions)
+  }
+
+  onMouseLeavingMap = (mapMeshes: Object3D) => {
     mapMeshes.traverse(object3d => {
       if ((<Mesh>object3d).isMesh) {
         this.paintMeshFrom(this.meshesData, <Mesh>object3d);
@@ -166,13 +154,11 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       }
     })
     this.paintColorOnMapText()
-    this.htmlTextStatus = 'select'
-    this.transparentFlag = false
   }
 
-  meshDataToDisplayOnHtml = (intersactions: Intersection[]) => {
+  updateTextOnHtml = (intersactions: Intersection[]) => {
     const nearestCamera: Intersection = intersactions.sort((a, b) => a.distance - b.distance)[0]
-    this.hoverDistrictWeatherInfo = this.mockFindDataByMeshName(this.meshesData, <Mesh>nearestCamera.object)
+    this.meshDataOnHtml = this.mockFindDataByMeshName(this.meshesData, <Mesh>nearestCamera.object)
   }
 
   updateMousePosiion = (event: MouseEvent): { x: number, y: number } => {
@@ -196,7 +182,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.camera.aspect = this.canvas.nativeElement.offsetWidth / this.canvas.nativeElement.offsetHeight
     this.camera.position.set(5, 16, 1);
     this.camera.lookAt(4, 0, 0);
-    // this.animateCamera()
+    this.animateCamera()
   }
 
   animateCamera = () => {
@@ -213,7 +199,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     }).delay(1.5).play()
   }
 
-  setupBox = () => {
+  setupBoxForTest = () => {
     const boxGeo = new BoxGeometry(2, 2, 2);
     const boxMaterial = new MeshLambertMaterial({ color: 0xffffff, opacity: 0.8, transparent: true })
     this.box = new Mesh(boxGeo, boxMaterial)
@@ -267,8 +253,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   createMeshesData = (graphsData: DistrictGraphData[]): DistrictMeshData[] => {
-    // create a seris of meshdata based on graph
-    let meshesData: DistrictMeshData[] = graphsData.map(graph => {
+    return graphsData.map(graph => {
       const meshdata = new DistrictMeshData()
       meshdata.tone = graph.tone
       meshdata.height = graph.height
@@ -276,13 +261,13 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       meshdata.zhDistrictName = graph.districtName
       return meshdata
     })
+  }
 
-    // assign english name on meshdata
-    meshesData = meshesData.map(meshData => {
+  assignMeshesdEnName = (meshesData: DistrictMeshData[]): DistrictMeshData[] => {
+    return meshesData.map(meshData => {
       const mapMeshGraph = this.weatherServer.districtsEnZhMap.find(map => {
         return map.zhCity === meshData.zhCityName && map.zhDistrict === meshData.zhDistrictName
       })
-
       if (mapMeshGraph) {
         meshData.enCityName = mapMeshGraph.enCity
         meshData.enDistrictName = mapMeshGraph.enDistrict
@@ -291,7 +276,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         throw new Error("A Mesh Has No English Name");
       }
     })
-    return meshesData
   }
 
   blendHexColors = (c0: string, c1: string, p: number) => {
@@ -299,25 +283,11 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     return "" + (0x1000000 + (Math.round((R2 - R1) * p) + R1) * 0x10000 + (Math.round((G2 - G1) * p) + G1) * 0x100 + (Math.round((B2 - B1) * p) + B1)).toString(16).slice(1);
   }
 
-  getTempRange = (WeatherInDistricts: DistrictWeatherInfo[]) => {
-    const sortByTemp = WeatherInDistricts.sort((a, b) => +a.topTempValue - +b.topTempValue)
-    const highestTemp = +sortByTemp[sortByTemp.length - 1].topTempValue
-    const lowestTemp = +sortByTemp[0].topTempValue
-    return [highestTemp, lowestTemp]
-  }
-
   mockGetToneRange = (WeatherInDistricts: DistrictGraphData[]) => {
     const sortByTemp = WeatherInDistricts.sort((a, b) => +a.tone - +b.tone)
     const maxTone = +sortByTemp[sortByTemp.length - 1].tone
     const minTone = +sortByTemp[0].tone
     return [maxTone, minTone]
-  }
-
-  getRainningRange = (WeatherInDistricts: DistrictWeatherInfo[]) => {
-    const sortByTemp = WeatherInDistricts.sort((a, b) => +a.rainValue - +b.rainValue)
-    const highestTemp = +sortByTemp[sortByTemp.length - 1].rainValue
-    const lowestTemp = +sortByTemp[0].rainValue
-    return [highestTemp, lowestTemp]
   }
 
   mockGetHeightRange = (meshData: DistrictMeshData[]) => {
@@ -378,40 +348,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     }
   }
 
-
-  animateDistrictsHeight = (buffer: { mesh: Mesh, weatherInfo: DistrictWeatherInfo | undefined }[]) => {
-    const weatherInfo: DistrictWeatherInfo[] = <DistrictWeatherInfo[]>buffer.filter(each => each.weatherInfo !== undefined).map(each => each.weatherInfo)
-    const [highestRainning, lowestRainning] = this.getRainningRange(weatherInfo)
-    const districtMeshAnimations: any[] = []
-    for (let i = 0; i < buffer.length; i++) {
-      if (buffer[i].weatherInfo) {
-        const rainValue = buffer[i].weatherInfo?.rainValue || '0'
-        const from = { scaleY: 1 }
-        const normalizedScale = (+rainValue - lowestRainning) / (highestRainning - lowestRainning);
-        const to = { scaleY: normalizedScale * 20 + 1 }
-        const districtMeshAnimation =
-          gsap.to(
-            from, {
-            ...to,
-            duration: 1,
-            onStart: (() => {
-              if (+rainValue !== 0) {
-                buffer[i].mesh.castShadow = true
-              }
-            }),
-            onUpdate: (() => {
-              buffer[i].mesh.scale.setY(from.scaleY)
-              buffer[i].mesh.position.setY(from.scaleY / 2)
-              this.textsMeshAndColor[0].districtMesh.position.setY(from.scaleY / 2)
-            }),
-            ease: Power1.easeInOut
-          }
-          ).delay(1).play()
-        districtMeshAnimations.push(districtMeshAnimation)
-      }
-    }
-  }
-
   setupMap = () => {
     const loader = new GLTFLoader()
     loader.loadAsync(this.ngLocation.prepareExternalUrl('/assets/taiwam15.gltf')).then(gltf => {
@@ -428,6 +364,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   setupMapMesh = (scene: Group, graphData: DistrictGraphData[]) => {
     const mapMaterial = new MeshPhongMaterial({ opacity: 1.0, transparent: true })
     this.meshesData = this.createMeshesData(graphData)
+    this.meshesData = this.assignMeshesdEnName(this.meshesData)
 
     const [maxTone, minTone] = this.mockGetToneRange(graphData)
     this.taiwanMap = scene;
