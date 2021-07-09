@@ -285,7 +285,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     return "" + (0x1000000 + (Math.round((R2 - R1) * p) + R1) * 0x10000 + (Math.round((G2 - G1) * p) + G1) * 0x100 + (Math.round((B2 - B1) * p) + B1)).toString(16).slice(1);
   }
 
-  mockGetToneRange = (WeatherInDistricts: DistrictGraphData[]) => {
+  mockGetToneRange = (WeatherInDistricts: DistrictMeshData[]) => {
     const sortByTemp = WeatherInDistricts.sort((a, b) => +a.tone - +b.tone)
     const maxTone = +sortByTemp[sortByTemp.length - 1].tone
     const minTone = +sortByTemp[0].tone
@@ -343,20 +343,19 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     const loader = new GLTFLoader()
     loader.loadAsync(this.ngLocation.prepareExternalUrl('/assets/taiwam15.gltf')).then(gltf => {
       gltf.scene.scale.set(0.1, 0.1, 0.1)
-      this.weatherServer.getMockWeatherInfo().subscribe(graphData => {
-        this.setupMapMesh(gltf.scene, graphData)
-        this.setupAndAnimateTexts()
-        this.mockAnimateDistrictsHeight()
-      });
+      this.weatherServer.getMockWeatherInfo().subscribe(null , error => {});
       this.scene.add(gltf.scene)
     })
   }
 
-  setupMapMesh = (scene: Group, graphData: DistrictGraphData[]) => {
-    const mapMaterial = new MeshPhongMaterial({ opacity: 1.0, transparent: true })
+  setupMeshData = (graphData: DistrictGraphData[]) => {
     this.meshesData = this.createMeshesData(graphData)
     this.meshesData = this.assignMeshesdEnName(this.meshesData)
-    const [maxTone, minTone] = this.mockGetToneRange(graphData)
+  }
+
+  setupMapMesh = (scene: Group, ) => {
+    const mapMaterial = new MeshPhongMaterial({ opacity: 1.0, transparent: true })
+    const [maxTone, minTone] = this.mockGetToneRange(this.meshesData)
     this.taiwanMap = scene;
 
     scene.traverse(object3d => {
@@ -378,7 +377,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     });
   }
 
-  mockGetArrayIndexBy = (extremumType: string, array: any[]): number => {
+  getArrayIndexBy = (extremumType: string, array: any[]): number => {
     let position
     if (extremumType === 'max') {
       position = 0
@@ -407,12 +406,12 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     let returnMeshData: DistrictMeshData | undefined = undefined
     if (dimension === 'tone') {
       const dataSortByDimension = meshesData.sort((a, b) => +b.tone - +a.tone)
-      const extremumIndex = this.mockGetArrayIndexBy(extremumType, dataSortByDimension)
+      const extremumIndex = this.getArrayIndexBy(extremumType, dataSortByDimension)
       extremumToneMesh = this.mockFindMeshFromIndex(dataSortByDimension, extremumIndex)
       returnMeshData = dataSortByDimension[extremumIndex]
     } else if (dimension === 'height') {
       const dataSortByDimension = meshesData.sort((a, b) => +b.height - +a.height)
-      const extremumIndex = this.mockGetArrayIndexBy(extremumType, dataSortByDimension)
+      const extremumIndex = this.getArrayIndexBy(extremumType, dataSortByDimension)
       extremumToneMesh = this.mockFindMeshFromIndex(dataSortByDimension, extremumIndex)
       returnMeshData = dataSortByDimension[extremumIndex]
     }

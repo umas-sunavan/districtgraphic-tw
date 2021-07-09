@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams, HttpRequest } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { enZhMapping } from './en-zh-mapping';
@@ -12,7 +12,7 @@ import { EnZhMap, WeatherData, ApiWeatherData, Location as ApiLocation, District
 export class WeatherService {
 
   constructor(
-    private httpclient: HttpClient
+    private httpclient: HttpClient,
   ) {
 
   }
@@ -138,13 +138,6 @@ export class WeatherService {
   })
 
   getWeatherInfo = (): Observable<DistrictWeatherInfo[]> => {
-    this.getMockWeatherInfo().subscribe(
-      next => {
-        console.log(next);
-
-      }
-    )
-
     const params = new HttpParams()
       .append('Authorization', 'CWB-58C1E113-D5B9-45A0-9295-BB080D302D68')
       .append('elementName', 'H_24R')
@@ -161,8 +154,8 @@ export class WeatherService {
     )
   }
 
-  getMockWeatherInfo = (): Observable<DistrictGraphData[]> => {
-    const rawdata: Observable<GoogleSheetRawData> = of({
+  getMockWeatherInfo = () => {
+    const rawdata: Observable<any> = of({
       "version": "0.6",
       "reqId": "0",
       "status": "ok",
@@ -6091,6 +6084,19 @@ export class WeatherService {
       }
     }
     )
+    const httpRequest = new HttpRequest(
+      "GET",
+      'https://docs.google.com/spreadsheets/d/1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q/gviz/tq?' 
+      ,{ responseType: "text"})
+    const result:Observable<any> = this.httpclient.request(httpRequest);
+    const headers = new HttpHeaders().set('Content-Type', 'text/plain; charset=utf-8');
+// @ts-ignore
+    return this.httpclient.get<any>('https://docs.google.com/spreadsheets/d/1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q/gviz/tq?', { responseType: "text"}).pipe(
+      tap( next => console.log(next)
+      )
+    )
+    // result.subscribe( next => console.log(next)
+    // )
     return rawdata.pipe(
       this.transformToDistrictData,
       this.mockFilterMalfunctionStation
