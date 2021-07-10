@@ -1,41 +1,36 @@
-<div [ngStyle]="{'color': htmlTextColor, display: mouseHoveAnyMesh ? 'flex':'none'}"
-    class="hovered-district-info">
+<div class="intercation-area">
     <h1>
         台灣天氣資訊圖像化
     </h1>
-    <div class="district-name-container" *ngIf="this.meshDataOnHtml">
-        <h2 class="zh">{{this.meshDataOnHtml.zhDistrictName}}</h2>
-        <h2 class="en">{{this.meshDataOnHtml.enDistrictName}}</h2>
+    <div [ngStyle]="{'color': htmlTextColor, 'display': mouseHoveAnyMesh ? 'flex':'none'}" class="district-info">
+        <div class="district-name-container" *ngIf="this.meshDataOnHtml">
+            <h2 class="zh">{{this.meshDataOnHtml.zhDistrictName}}</h2>
+            <h2 class="en">{{this.meshDataOnHtml.enDistrictName}}</h2>
+        </div>
+        <div class="city-name-container" *ngIf="this.meshDataOnHtml">
+            <h3 class="zh">{{this.meshDataOnHtml.zhCityName}}</h3>
+            <h3 class="en">{{this.meshDataOnHtml.enCityName.split("_").join()}}</h3>
+        </div>
+        <div class="statistics-container" *ngIf="this.meshDataOnHtml">
+            <small class="zh">今日降雨量</small>
+            <h3 class="en">{{this.meshDataOnHtml.height | number: '1.1-1'}}</h3>
+            <small class="zh">本日最高溫</small>
+            <h3 class="en">{{this.meshDataOnHtml.tone | number: '1.1-1'}}</h3>
+        </div>
     </div>
-    <div class="city-name-container" *ngIf="this.meshDataOnHtml">
-        <h3 class="zh">{{this.meshDataOnHtml.zhCityName}}</h3>
-        <h3 class="en">{{this.meshDataOnHtml.enCityName.split("_").join()}}</h3>
+    <div [ngStyle]="{'color': '#666666', display: mouseHoverDetalessMesh && mouseHoveAnyMesh ? 'flex':'none'}">
+        <div class="city-name-container">
+            <h3 class="zh">無該區氣象台資料</h3>
+        </div>
+        <div class="city-name-container">
+            <h3 class="en">No Weather Information Here.</h3>
+        </div>
     </div>
-    <div class="statistics-container" *ngIf="this.meshDataOnHtml">
-        <small class="zh">今日降雨量</small>
-        <h3 class="en">{{this.meshDataOnHtml.height | number: '1.1-1'}}</h3>
-        <small class="zh">本日最高溫</small>
-        <h3 class="en">{{this.meshDataOnHtml.tone | number: '1.1-1'}}</h3>
-    </div>
-</div>
-<div [ngStyle]="{'color': '#666666', display: mouseHoverDetalessMesh && mouseHoveAnyMesh ? 'flex':'none'}"
-    class="hovered-district-info">
-    <h1>
-        台灣天氣資訊圖像化
-    </h1>
-    <div class="city-name-container">
-        <h3 class="zh">無該區氣象台資料</h3>
-        <h3 class="en">No Weather Information Here.</h3>
-    </div>
-</div>
-<div [ngStyle]="{'color': '#666666', display: mouseHoveAnyMesh  ? 'none':'flex'}"
-    class="hovered-district-info">
-    <h1>
-        台灣天氣資訊圖像化
-    </h1>
-    <div class="city-name-container">
-        <h3 class="zh">移動滑鼠以探索天氣狀況</h3>
-        <h3 class="en">Explore by moving your mouse.</h3>
+    <div [ngStyle]="{'color': '#666666', display: mouseHoveAnyMesh  ? 'none':'flex'}" class="hovered-district-info">
+        <div class="city-name-container">
+            <h3 class="zh">移動滑鼠以探索天氣狀況</h3>
+            <h3 class="en">Explore by moving your mouse.</h3>
+        </div>
     </div>
 </div>
 <div #canvas (mousemove)="onMousemove($event)" style="width: 100%; height:100vh;"></div>
