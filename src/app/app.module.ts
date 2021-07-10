@@ -4,19 +4,20 @@ import { BrowserModule } from '@angular/platform-browser';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
+import { GoogleSheetIntercepter, httpInterceptorProviders } from './googleSheetIntercepter';
 import { GraphicComponent } from './graphic/graphic.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    GraphicComponent
+    GraphicComponent,
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     HttpClientModule
   ],
-  providers: [],
+  providers: [httpInterceptorProviders],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

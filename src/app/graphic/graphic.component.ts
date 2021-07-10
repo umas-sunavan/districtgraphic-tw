@@ -5,7 +5,7 @@ import { BackSide, BoxGeometry, CameraHelper, Color, CylinderGeometry, Direction
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { WeatherService } from '../weather.service';
-import { DistrictGraphData, DistrictMeshData, DistrictWeatherInfo, EnZhMap } from '../interfaces';
+import { DistrictGraphData, DistrictMeshData } from '../interfaces';
 @Component({
   selector: 'app-graphic',
   templateUrl: './graphic.component.html',
@@ -343,7 +343,11 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     const loader = new GLTFLoader()
     loader.loadAsync(this.ngLocation.prepareExternalUrl('/assets/taiwam15.gltf')).then(gltf => {
       gltf.scene.scale.set(0.1, 0.1, 0.1)
-      this.weatherServer.getMockWeatherInfo().subscribe(null , error => {});
+      this.weatherServer.getMockWeatherInfo().subscribe(
+        next => {
+          console.log(next);
+          
+        });
       this.scene.add(gltf.scene)
     })
   }

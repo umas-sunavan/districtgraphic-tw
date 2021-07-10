@@ -6084,23 +6084,9 @@ export class WeatherService {
       }
     }
     )
-    const httpRequest = new HttpRequest(
-      "GET",
-      'https://docs.google.com/spreadsheets/d/1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q/gviz/tq?' 
-      ,{ responseType: "text"})
-    const result:Observable<any> = this.httpclient.request(httpRequest);
-    const headers = new HttpHeaders().set('Content-Type', 'text/plain; charset=utf-8');
-// @ts-ignore
-    return this.httpclient.get<any>('https://docs.google.com/spreadsheets/d/1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q/gviz/tq?', { responseType: "text"}).pipe(
-      tap( next => console.log(next)
-      )
-    )
-    // result.subscribe( next => console.log(next)
-    // )
-    return rawdata.pipe(
-      this.transformToDistrictData,
-      this.mockFilterMalfunctionStation
-    )
+    const sheeId = `1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q`
+    // @ts-ignore
+    return this.httpclient.get<json>(`https://docs.google.com/spreadsheets/d/${sheeId}/gviz/tq?`)
   }
 
   mockFilterMalfunctionStation = map((graphsData: DistrictGraphData[]): DistrictGraphData[] => {
@@ -6114,7 +6100,7 @@ export class WeatherService {
     return functioningStations
   })
 
-  transformToDistrictData = map((rawData: GoogleSheetRawData):DistrictGraphData[] => {
+  transformToDistrictData = map((rawData: GoogleSheetRawData): DistrictGraphData[] => {
     const table = rawData.table.rows
     const districtGraphData: DistrictGraphData[] = table.map(column => {
       return {
