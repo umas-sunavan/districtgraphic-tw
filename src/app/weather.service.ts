@@ -20,30 +20,6 @@ export class WeatherService {
   // names we can find in the 3D model
   districtsEnZhMap: EnZhMap[] = enZhMapping
 
-
-  checkMissedDistrict = tap((value: WeatherData) => {
-    this.districtsEnZhMap.forEach(districtMap => {
-      const mappedDistrict = value.records.location.find(location => {
-        const waetherDistrictName = location.parameter.find(param => param.parameterName === 'TOWN')?.parameterValue
-        const waetherCityName = location.parameter.find(param => param.parameterName === 'CITY')?.parameterValue
-        const sameDistrictName = districtMap.zhDistrict === waetherDistrictName
-        const sameCityName = districtMap.zhCity === waetherCityName
-        return sameDistrictName && sameCityName
-      })
-    })
-  })
-
-  filterMalfunctionStation = map((value: WeatherData): WeatherData => {
-    const functioningStations = value.records.location.filter(station => {
-      const isRainMalfunction = station.weatherElement.find(element => element.elementName === 'H_24R')?.elementValue === '-99'
-      const isHighestTempMalfunction = station.weatherElement.find(element => element.elementName === 'D_TX')?.elementValue === '-99'
-      const isMalfunction = isHighestTempMalfunction || isRainMalfunction
-      return !isMalfunction
-    })
-    value.records.location = functioningStations
-    return value
-  })
-
   findWeatherValue = (station: ApiLocation, elementName: string) => {
     const element = station.weatherElement.find(element => element.elementName === elementName)
     if (element) {
@@ -64,97 +40,7 @@ export class WeatherService {
     }
   }
 
-  extractDemandingInfo = map((value: WeatherData): ApiWeatherData[] => {
-    const demandingInfo = value.records.location.map(station => {
-      const rainValue = this.findWeatherValue(station, 'H_24R')
-      const topTempValue = this.findWeatherValue(station, 'D_TX')
-      const district = this.findLocationValue(station, 'TOWN')
-      const city = this.findLocationValue(station, 'CITY')
-      return { rainValue, topTempValue, district, city }
-    })
-    return demandingInfo
-  })
-
-  averageDuplicatedRainning = map((districtsInfo: ApiWeatherData[]): ApiWeatherData[] => {
-    const recordDistrict: ApiWeatherData[] = []
-    districtsInfo.map(districtInfo => {
-      const recordedDistricts = recordDistrict.filter(record => record.district === districtInfo.district && record.city === districtInfo.city)
-      if (recordedDistricts !== undefined) {
-        const averageRain = this.getAverageRainValue([...recordedDistricts, districtInfo])
-        recordedDistricts.forEach(district => { district.rainValue = averageRain })
-        districtInfo.rainValue = averageRain
-        recordDistrict.push(districtInfo)
-      } else {
-        recordDistrict.push(districtInfo)
-      }
-    })
-    return recordDistrict
-  })
-
-  averageDuplicatedHighestTemp = map((districtsInfo: ApiWeatherData[]): ApiWeatherData[] => {
-    const recordDistrict: ApiWeatherData[] = []
-    districtsInfo.map(districtInfo => {
-      const recordedDuplicates = recordDistrict.filter(record => record.district === districtInfo.district && record.city === districtInfo.city)
-      if (recordedDuplicates !== undefined) {
-        const topTemp = this.getAverageHighestTempValue([...recordedDuplicates, districtInfo])
-        recordedDuplicates.forEach(district => { district.topTempValue = topTemp })
-        districtInfo.topTempValue = topTemp
-        recordDistrict.push(districtInfo)
-      } else {
-        recordDistrict.push(districtInfo)
-      }
-    })
-    return recordDistrict
-  })
-
-  filterDuplicatedDistrict = map((districtsInfo: ApiWeatherData[]): ApiWeatherData[] => {
-    const checkDuplicates: ApiWeatherData[] = []
-    districtsInfo.forEach(district => {
-      const duplicated = checkDuplicates.some(pushedDistrict => {
-        return district.district === pushedDistrict.district && district.city === pushedDistrict.city
-      })
-      duplicated ? '' : checkDuplicates.push(district)
-    })
-    return checkDuplicates
-  })
-
-  changeObjType = map((weatherInDistricts: ApiWeatherData[]): DistrictWeatherInfo[] => {
-    const weatherInfo = weatherInDistricts.map(weatherInDistricts => {
-      return { ...weatherInDistricts, color: { r: 0, g: 0, b: 0 }, enCity: '', enDistrictAndCity: '' }
-    })
-    return weatherInfo
-  })
-
-  weatherAdapter = map((origion: DistrictWeatherInfo[]): DistrictGraphData[] => {
-    const adapted: DistrictGraphData[] = origion.map(origionalMesh => {
-      return {
-        cityName: origionalMesh.city,
-        districtName: origionalMesh.district,
-        height: +origionalMesh.rainValue,
-        tone: +origionalMesh.topTempValue
-      }
-    })
-    return adapted
-  })
-
-  getWeatherInfo = (): Observable<DistrictWeatherInfo[]> => {
-    const params = new HttpParams()
-      .append('Authorization', 'CWB-58C1E113-D5B9-45A0-9295-BB080D302D68')
-      .append('elementName', 'H_24R')
-      .append('elementName', 'D_TX')
-    return this.httpclient.get<WeatherData>('https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0001-001', { params: params }).pipe(
-      this.checkMissedDistrict,
-      this.filterMalfunctionStation,
-      this.extractDemandingInfo,
-      this.averageDuplicatedRainning,
-      this.averageDuplicatedHighestTemp,
-      this.filterDuplicatedDistrict,
-      this.changeObjType,
-      // this.weatherAdapter,
-    )
-  }
-
-  mockGetWeatherInfo = (): Observable<DistrictGraphData[]> => {
+  getWeatherInfo = (): Observable<DistrictGraphData[]> => {
     const rawdata: Observable<GoogleSheetRawData> = of({
       "version": "0.6",
       "reqId": "0",
@@ -6090,20 +5976,20 @@ export class WeatherService {
       .append('elementName', 'D_TX')
     return this.httpclient.get<WeatherData>('https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0001-001', { params: params }).pipe(
       this.convertWeatherApiToDistrictGraphData,
-      this.FilterGoogleSheetMalfunctionStation,
-      this.mockAverageDuplicatedHeight,
-      this.mockAverageDuplicatedHighestTemp,
-      this.mockFilterDuplicatedDistrict,
+      this.filterMalfunctionStation,
+      this.averageHeightInDuplicateDistrict,
+      this.averageToneInDuplicateDistrict,
+      this.filterDuplicatedDistrict,
     )
   }
 
-  mockAverageDuplicatedHeight = map((districts: DistrictGraphData[]): DistrictGraphData[] => {
+  averageHeightInDuplicateDistrict = map((districts: DistrictGraphData[]): DistrictGraphData[] => {
     const recordDistricts: DistrictGraphData[] = []
     districts.map(currentDistrict => {
       const sameDistrictsInRecord = recordDistricts.filter(record => record.districtName === currentDistrict.districtName && record.cityName === currentDistrict.cityName)
       if (sameDistrictsInRecord !== undefined) {
         // has duplicated district
-        const avgHeight = this.mockGetAverageRainValue([...sameDistrictsInRecord, currentDistrict])
+        const avgHeight = this.getAverageHeight([...sameDistrictsInRecord, currentDistrict])
         sameDistrictsInRecord.forEach(district => { district.height = avgHeight })
         currentDistrict.height = avgHeight
         recordDistricts.push(currentDistrict)
@@ -6114,12 +6000,12 @@ export class WeatherService {
     return recordDistricts
   })
 
-  mockAverageDuplicatedHighestTemp = map((districts: DistrictGraphData[]): DistrictGraphData[] => {
+  averageToneInDuplicateDistrict = map((districts: DistrictGraphData[]): DistrictGraphData[] => {
     const recordDistrict: DistrictGraphData[] = []
     districts.map(currentDistrict => {
       const sameDistrictsInRecord = recordDistrict.filter(record => record.districtName === currentDistrict.districtName && record.cityName === currentDistrict.cityName)
       if (sameDistrictsInRecord !== undefined) {
-        const avgTone = this.mockGetAverageHighestTempValue([...sameDistrictsInRecord, currentDistrict])
+        const avgTone = this.getAverageTone([...sameDistrictsInRecord, currentDistrict])
         sameDistrictsInRecord.forEach(district => { district.tone = avgTone })
         currentDistrict.tone = avgTone
         recordDistrict.push(currentDistrict)
@@ -6130,7 +6016,7 @@ export class WeatherService {
     return recordDistrict
   })
 
-  mockFilterDuplicatedDistrict = map((districts: DistrictGraphData[]): DistrictGraphData[] => {
+  filterDuplicatedDistrict = map((districts: DistrictGraphData[]): DistrictGraphData[] => {
     let recordDistricts: DistrictGraphData[] = []
     districts.forEach(currentDistrict => {
       const foundDuplicate = recordDistricts.some(recordDistrict => {
@@ -6146,10 +6032,10 @@ export class WeatherService {
     // @ts-ignore
     return this.httpclient.get<GoogleSheetRawData>(`https://docs.google.com/spreadsheets/d/${sheeId}/gviz/tq?`).pipe(
       this.convertGoogleSheetToDistrictGraphData,
-      this.FilterGoogleSheetMalfunctionStation,
-      this.mockAverageDuplicatedHeight,
-      this.mockAverageDuplicatedHighestTemp,
-      this.mockFilterDuplicatedDistrict,
+      this.filterMalfunctionStation,
+      this.averageHeightInDuplicateDistrict,
+      this.averageToneInDuplicateDistrict,
+      this.filterDuplicatedDistrict,
     )
   }
 
@@ -6191,7 +6077,7 @@ export class WeatherService {
     return districtsGraphData
   })
 
-  FilterGoogleSheetMalfunctionStation = map((graphsData: DistrictGraphData[]): DistrictGraphData[] => {
+  filterMalfunctionStation = map((graphsData: DistrictGraphData[]): DistrictGraphData[] => {
     // filterMalfunctionStation = map((value: WeatherData): WeatherData => {
     const functioningStations = graphsData.filter(station => {
       const isRainMalfunction = station.height === -99
@@ -6202,28 +6088,7 @@ export class WeatherService {
     return functioningStations
   })
 
-  transformToDistrictData = map((rawData: GoogleSheetRawData): DistrictGraphData[] => {
-    const table = rawData.table.rows
-    const districtGraphData: DistrictGraphData[] = table.map(column => {
-      return {
-        cityName: column.c[0].v,
-        districtName: column.c[1].v,
-        height: +column.c[2].v,
-        tone: +column.c[3].v
-      }
-    }).filter((v, i) => i !== 0)
-    return districtGraphData
-  })
-
-  getAverageRainValue = (districts: ApiWeatherData[]): string => {
-    let sumRain = 0
-    districts.forEach(district => {
-      sumRain += +district.rainValue
-    })
-    return sumRain / districts.length + ''
-  }
-
-  mockGetAverageRainValue = (districts: DistrictGraphData[]): number => {
+  getAverageHeight = (districts: DistrictGraphData[]): number => {
     let sumHeight = 0
     districts.forEach(district => {
       sumHeight += +district.height
@@ -6231,15 +6096,7 @@ export class WeatherService {
     return sumHeight / districts.length
   }
 
-  getAverageHighestTempValue = (districts: ApiWeatherData[]): string => {
-    let sumTemp = 0
-    districts.forEach(district => {
-      sumTemp += +district.topTempValue
-    })
-    return (sumTemp / districts.length) + ''
-  }
-
-  mockGetAverageHighestTempValue = (districts: DistrictGraphData[]): number => {
+  getAverageTone = (districts: DistrictGraphData[]): number => {
     let sumTone = 0
     districts.forEach(district => {
       sumTone += +district.tone
