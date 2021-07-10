@@ -118,6 +118,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.mouse = this.updateMousePosiion(event)
     this.raycaster.setFromCamera(this.mouse, this.camera)
     const mapMeshes = this.taiwanMap.children[0]
+    
     if (mapMeshes) {
       const intersactions = this.raycaster.intersectObjects(mapMeshes.children, true)
       if (intersactions.length > 0) {
@@ -127,7 +128,9 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         this.mouseHoveAnyMesh = false
         this.onMouseLeavingLand(mapMeshes)
       }
-    } else { console.error("no secene object") }
+    } else { 
+      // scene not setup yet or had gone
+     }
   }
 
   onMouseHoveringLand = (mapMeshes: Object3D, intersactions: Intersection[]) => {
@@ -313,7 +316,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     const [maxHeight, minHeight] = this.mockGetHeightRange(this.meshesData)
     const districtMeshAnimations: any[] = []
     for (let i = 0; i < this.meshesData.length; i++) {
-      const height = this.meshesData[i].height || '0'
+      const height = this.meshesData[i].height || 0
       const from = { scaleY: 1 }
       const normalizedScale = (+height - minHeight) / (maxHeight - minHeight);
       const to = { scaleY: normalizedScale * 20 + 1 }
@@ -323,14 +326,13 @@ export class GraphicComponent implements OnInit, AfterViewInit {
           ...to,
           duration: 1,
           onStart: (() => {
-            if (+height !== 0) {
+            if (height !== 0) {
               this.meshesData[i].mesh3d.castShadow = true
             }
           }),
           onUpdate: (() => {
             this.meshesData[i].mesh3d.scale.setY(from.scaleY)
             this.meshesData[i].mesh3d.position.setY(from.scaleY / 2)
-            this.textsMeshAndColor[0].districtMesh.position.setY(from.scaleY / 2)
           }),
           ease: Power1.easeInOut
         }
@@ -343,11 +345,12 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     const loader = new GLTFLoader()
     loader.loadAsync(this.ngLocation.prepareExternalUrl('/assets/taiwam15.gltf')).then(gltf => {
       gltf.scene.scale.set(0.1, 0.1, 0.1)
-      this.weatherServer.getMockWeatherInfo().subscribe(
-        next => {
-          console.log(next);
-          
-        });
+      this.weatherServer.getGoogleSheetInfo().subscribe(graphData => {
+        this.setupMeshData(graphData)
+        this.setupMapMesh(gltf.scene)
+        this.setupAndAnimateTexts()
+        this.mockAnimateDistrictsHeight()
+      });
       this.scene.add(gltf.scene)
     })
   }
@@ -357,7 +360,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.meshesData = this.assignMeshesdEnName(this.meshesData)
   }
 
-  setupMapMesh = (scene: Group, ) => {
+  setupMapMesh = (scene: Group) => {
     const mapMaterial = new MeshPhongMaterial({ opacity: 1.0, transparent: true })
     const [maxTone, minTone] = this.mockGetToneRange(this.meshesData)
     this.taiwanMap = scene;
@@ -369,6 +372,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         mesh.receiveShadow = true
         const meshData = this.mockFindDataByMeshName(this.meshesData, mesh)
         if (meshData) {
+          // 這邊因為有複數的資料，如果有兩個重複的鄉鎮市區資料，那麼地圖會抓到第一個，然後染色。第二個鄉鎮市區資料則不會染色。當mousemove抓到之後染色時就抓不到資料
           meshData.rgbColor = this.getMaterialColorByRate(maxTone, minTone, meshData.tone);
           // @ts-ignore
           mesh.material.color = meshData.rgbColor
