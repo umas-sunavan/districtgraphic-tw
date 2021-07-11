@@ -6,6 +6,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { WeatherService } from '../weather.service';
 import { DistrictGraphData, DistrictMeshData } from '../interfaces';
+import { Form, FormControl, FormGroup } from '@angular/forms';
+import { tap } from 'rxjs/operators';
 @Component({
   selector: 'app-graphic',
   templateUrl: './graphic.component.html',
@@ -33,6 +35,10 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   meshesData: DistrictMeshData[]
   box: Object3D
   box2: Object3D
+  showCreateMapPopup: boolean = false;
+
+  test: string = '12qsd'
+  asds: string = 'adh'
 
 
   constructor(
@@ -62,6 +68,13 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.box2 = new Mesh()
     this.light = new PointLight()
   }
+
+  submitCreatingMap = (formGroup: Form) => {
+    console.log(formGroup);
+    this.setupMap('GET_GOOGLE_SHEET')
+    this.showCreateMapPopup = !this.showCreateMapPopup
+  }
+
 
   ngOnInit(): void {
   }
@@ -97,11 +110,11 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   paintMapTextFrom = (hoverMesh: Mesh) => {
-    const textAboveMesh = this.textsMeshAndColor.filter(text => text.textMesh.name.includes(hoverMesh.name))    
+    const textAboveMesh = this.textsMeshAndColor.filter(text => text.textMesh.name.includes(hoverMesh.name))
     if (textAboveMesh.length !== 0) {
       // @ts-ignore 
       textAboveMesh.forEach(foundText => foundText.textMesh.material.color = this.convertHexTo0to1(foundText.textHexColor))
-    } else { 
+    } else {
       // no text above the hovered mesh
     }
   }
@@ -118,7 +131,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.mouse = this.updateMousePosiion(event)
     this.raycaster.setFromCamera(this.mouse, this.camera)
     const mapMeshes = this.taiwanMap.children[0]
-    
+
     if (mapMeshes) {
       const intersactions = this.raycaster.intersectObjects(mapMeshes.children, true)
       if (intersactions.length > 0) {
@@ -128,9 +141,9 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         this.mouseHoveAnyMesh = false
         this.onMouseLeavingLand(mapMeshes)
       }
-    } else { 
+    } else {
       // scene not setup yet or had gone
-     }
+    }
   }
 
   onMouseHoveringLand = (mapMeshes: Object3D, intersactions: Intersection[]) => {
@@ -278,6 +291,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         meshData.enDistrictName = mapMeshGraph.enDistrict
         return meshData
       } else {
+        console.log(meshData);
         throw new Error("A Mesh Has No English Name");
       }
     })
@@ -314,7 +328,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
   animateDistrictsHeight = () => {
     const [maxHeight, minHeight] = this.getHeightRange(this.meshesData)
-    const districtMeshAnimations: any[] = []
     for (let i = 0; i < this.meshesData.length; i++) {
       const height = this.meshesData[i].height || 0
       const from = { scaleY: 1 }
@@ -337,21 +350,38 @@ export class GraphicComponent implements OnInit, AfterViewInit {
           ease: Power1.easeInOut
         }
         ).delay(1).play()
-      districtMeshAnimations.push(districtMeshAnimation)
     }
   }
 
-  setupMap = () => {
+  setupMap = (source: string = 'weather') => {
     const loader = new GLTFLoader()
     loader.loadAsync(this.ngLocation.prepareExternalUrl('/assets/taiwam15.gltf')).then(gltf => {
       gltf.scene.scale.set(0.1, 0.1, 0.1)
-      this.weatherServer.getWeatherInfo().subscribe(graphData => {
-        this.setupMeshData(graphData)
-        this.setupMapMesh(gltf.scene)
-        this.setupAndAnimateTexts()
-        this.animateDistrictsHeight()
-        this.scene.add(gltf.scene)
-      });
+      if (source === 'weather') {
+        if (this.taiwanMap) this.taiwanMap.removeFromParent()
+        this.weatherServer.getWeatherInfo().subscribe(graphData => {
+          this.setupMeshData(graphData)
+          this.setupMapMesh(gltf.scene)
+          this.setupAndAnimateTexts()
+          this.animateDistrictsHeight()
+          this.scene.add(gltf.scene)
+        });
+      } else {
+        if (this.taiwanMap) this.taiwanMap.removeFromParent()
+        this.weatherServer.getGoogleSheetInfo().pipe(tap( next => {
+          console.log(next);
+          
+        })).subscribe(graphData => {
+          gltf.scene.position.set(0, 0, 2)
+          this.setupMeshData(graphData)
+          this.setupMapMesh(gltf.scene)
+          this.setupAndAnimateTexts()
+          this.animateDistrictsHeight()
+          this.scene.add(gltf.scene)
+        });
+
+      }
+
     })
   }
 
@@ -410,8 +440,8 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   getExtremumMesh = (extremumType: string, dimension: string, meshesData: DistrictMeshData[]): DistrictMeshData => {
-    let extremumToneMesh: Mesh | undefined = undefined
-    let returnMeshData: DistrictMeshData | undefined = undefined
+    let extremumToneMesh: Mesh | undefined
+    let returnMeshData: DistrictMeshData | undefined
     if (dimension === 'tone') {
       const dataSortByDimension = meshesData.sort((a, b) => +b.tone - +a.tone)
       const extremumIndex = this.getArrayIndexBy(extremumType, dataSortByDimension)
@@ -419,6 +449,10 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       returnMeshData = dataSortByDimension[extremumIndex]
     } else if (dimension === 'height') {
       const dataSortByDimension = meshesData.sort((a, b) => +b.height - +a.height)
+      
+      dataSortByDimension.forEach( data => {
+        console.log(data.height, data.zhDistrictName);
+      })
       const extremumIndex = this.getArrayIndexBy(extremumType, dataSortByDimension)
       extremumToneMesh = this.findMeshFromIndex(dataSortByDimension, extremumIndex)
       returnMeshData = dataSortByDimension[extremumIndex]
@@ -436,9 +470,14 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     const maxHeightMesh = this.getExtremumMesh('max', 'height', this.meshesData);
     const minHeightMesh = this.getExtremumMesh('min', 'height', this.meshesData);
 
+
+
     const loader = new FontLoader()
     loader.load(this.ngLocation.prepareExternalUrl('/assets/jf-openhuninn-1.1_Regular_districts_words.json'), ((font) => {
-
+      if (this.textsMeshAndColor.length !== 0) {
+        this.textsMeshAndColor.forEach(textMesh => textMesh.textMesh.removeFromParent())
+        this.textsMeshAndColor = []
+      }
       const maxToneTitleMesh = this.createTextMesh(font, maxToneMesh.mesh3d, maxToneMesh.zhDistrictName, maxToneMesh.rgbColor)
       const minToneTitleMesh = this.createTextMesh(font, minToneMesh.mesh3d, minToneMesh.zhDistrictName, minToneMesh.rgbColor)
       const maxHeightTitleMesh = this.createTextMesh(font, maxHeightMesh.mesh3d, maxHeightMesh.zhDistrictName, maxHeightMesh.rgbColor)
@@ -537,7 +576,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   animate = () => {
-    if (this.renderer.info.render.frame < 90) {
+    if (this.renderer.info.render.frame < 900) {
       requestAnimationFrame(this.animate);
     }
     this.renderer.render(this.scene, this.camera);

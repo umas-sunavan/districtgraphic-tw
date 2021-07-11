@@ -6,6 +6,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { GoogleSheetIntercepter, httpInterceptorProviders } from './googleSheetIntercepter';
 import { GraphicComponent } from './graphic/graphic.component';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 @NgModule({
   declarations: [
@@ -15,7 +16,8 @@ import { GraphicComponent } from './graphic/graphic.component';
   imports: [
     BrowserModule,
     AppRoutingModule,
-    HttpClientModule
+    HttpClientModule,
+    FormsModule,
   ],
   providers: [httpInterceptorProviders],
   bootstrap: [AppComponent]

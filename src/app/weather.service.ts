@@ -6056,6 +6056,9 @@ export class WeatherService {
   })
 
   convertGoogleSheetToDistrictGraphData = map((next): DistrictGraphData[] => {
+    console.log(next);
+    
+    
     const raw = <GoogleSheetRawData>next
     const firstRow = raw.table.rows[0].c
     const zhCityColumnIndex = firstRow.findIndex(cell => cell.v === '縣市')
@@ -6065,15 +6068,16 @@ export class WeatherService {
     const timelineColumnIndex = firstRow.findIndex(cell => cell.v === "時間軸")
     const districtsGraphData: DistrictGraphData[] = raw.table.rows
       .map(row => {
+        console.log(heightColumnIndex, row.c[heightColumnIndex], JSON.stringify(row.c));
+        
         return {
-          cityName: row.c[zhCityColumnIndex].v,
-          districtName: row.c[zhDistrictColumnIndex].v,
-          height: +row.c[heightColumnIndex].v,
-          tone: +row.c[toneColumnIndex].v,
+          cityName: row.c[0].v,
+          districtName: row.c[1].v,
+          height: +row.c[2].v,
+          tone: +row.c[3].v,
           meshText: undefined
         }
       })
-      .filter((v, i) => i !== 0)
     return districtsGraphData
   })
 
@@ -6083,6 +6087,10 @@ export class WeatherService {
       const isRainMalfunction = station.height === -99
       const isHighestTempMalfunction = station.tone === -99
       const isMalfunction = isHighestTempMalfunction || isRainMalfunction
+      if (isMalfunction) {
+        console.log(`站台 ${JSON.stringify(station)} 運作不正常`);
+        
+      }
       return !isMalfunction
     })
     return functioningStations

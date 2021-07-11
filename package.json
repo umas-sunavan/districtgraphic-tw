@@ -9,7 +9,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "dev-base-dir": "lite-server --baseDir='docs/'",
-    "dev": "lite-server"  
+    "dev": "lite-server"
   },
   "private": true,
   "dependencies": {
@@ -21,7 +21,9 @@
     "@angular/platform-browser": "~12.0.3",
     "@angular/platform-browser-dynamic": "~12.0.3",
     "@angular/router": "~12.0.3",
+    "bootstrap": "^5.0.2",
     "gsap": "npm:@gsap/member@^3.7.0",
+    "jquery": "^3.6.0",
     "lite-server": "^2.6.1",
     "rxjs": "~6.6.0",
     "three": "^0.130.0",
