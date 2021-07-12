@@ -8,6 +8,9 @@ import { WeatherService } from '../weather.service';
 import { DistrictGraphData, DistrictMeshData } from '../interfaces';
 import { Form, FormControl, FormGroup } from '@angular/forms';
 import { tap } from 'rxjs/operators';
+import { AngularFireDatabase, AngularFireList } from '@angular/fire/database';
+import { Observable } from 'rxjs';
+
 @Component({
   selector: 'app-graphic',
   templateUrl: './graphic.component.html',
@@ -40,11 +43,24 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   test: string = '12qsd'
   asds: string = 'adh'
 
+  dbitems: Observable<any[]>;
+  itemsRef: AngularFireList<any>
 
   constructor(
     private weatherServer: WeatherService,
-    private ngLocation: ngLocation
+    private ngLocation: ngLocation,
+    private db: AngularFireDatabase,
   ) {
+    this.dbitems = this.db.list('items').valueChanges();
+    this.itemsRef = db.list('items');
+    this.itemsRef.snapshotChanges(['child_added'])
+      .subscribe(actions => {
+        actions.forEach(action => {
+          console.log(action.type);
+          console.log(action.key);
+          console.log(action.payload.val());
+        });
+      });
     this.scene = new Scene()
     this.camera = new PerspectiveCamera(
       75,
@@ -86,6 +102,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.setupLight()
     // this.setupBoxForTest()
     this.setupMap()
+    this.itemsRef.push({text:'name'})
   }
 
   transparentMesh = (mesh: Mesh, opacity: number = 0.6) => {
@@ -368,9 +385,9 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         });
       } else {
         if (this.taiwanMap) this.taiwanMap.removeFromParent()
-        this.weatherServer.getGoogleSheetInfo().pipe(tap( next => {
+        this.weatherServer.getGoogleSheetInfo().pipe(tap(next => {
           console.log(next);
-          
+
         })).subscribe(graphData => {
           gltf.scene.position.set(0, 0, 2)
           this.setupMeshData(graphData)
@@ -449,10 +466,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       returnMeshData = dataSortByDimension[extremumIndex]
     } else if (dimension === 'height') {
       const dataSortByDimension = meshesData.sort((a, b) => +b.height - +a.height)
-      
-      dataSortByDimension.forEach( data => {
-        console.log(data.height, data.zhDistrictName);
-      })
       const extremumIndex = this.getArrayIndexBy(extremumType, dataSortByDimension)
       extremumToneMesh = this.findMeshFromIndex(dataSortByDimension, extremumIndex)
       returnMeshData = dataSortByDimension[extremumIndex]
@@ -576,7 +589,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   animate = () => {
-    if (this.renderer.info.render.frame < 900) {
+    if (this.renderer.info.render.frame < 90) {
       requestAnimationFrame(this.animate);
     }
     this.renderer.render(this.scene, this.camera);
