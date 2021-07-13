@@ -6,7 +6,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { WeatherService } from '../weather.service';
 import { DistrictGraphData, DistrictMeshData } from '../interfaces';
-import { Form, FormControl, FormGroup } from '@angular/forms';
+import { Form, FormControl, FormGroup, NgForm } from '@angular/forms';
 import { tap } from 'rxjs/operators';
 import { AngularFireDatabase, AngularFireList } from '@angular/fire/database';
 import { Observable } from 'rxjs';
@@ -39,28 +39,18 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   box: Object3D
   box2: Object3D
   showCreateMapPopup: boolean = false;
-
-  test: string = '12qsd'
-  asds: string = 'adh'
+  showEditMapPopup: boolean = false;
 
   dbitems: Observable<any[]>;
-  itemsRef: AngularFireList<any>
+  dbList: AngularFireList<any>
 
   constructor(
     private weatherServer: WeatherService,
     private ngLocation: ngLocation,
     private db: AngularFireDatabase,
   ) {
-    this.dbitems = this.db.list('items').valueChanges();
-    this.itemsRef = db.list('items');
-    this.itemsRef.snapshotChanges(['child_added'])
-      .subscribe(actions => {
-        actions.forEach(action => {
-          console.log(action.type);
-          console.log(action.key);
-          console.log(action.payload.val());
-        });
-      });
+    this.dbList = this.db.list('maps')
+    this.dbitems = this.dbList.valueChanges();
     this.scene = new Scene()
     this.camera = new PerspectiveCamera(
       75,
@@ -85,12 +75,51 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.light = new PointLight()
   }
 
-  submitCreatingMap = (formGroup: Form) => {
-    console.log(formGroup);
-    this.setupMap('GET_GOOGLE_SHEET')
-    this.showCreateMapPopup = !this.showCreateMapPopup
+  submitEditingMap = (mapAttribute: {authorName:string, authorEmail: string, mapTitle: string }, mapSource: {urlLink:string, goNextPopup:string}) => {
+    console.log(mapAttribute, mapSource, {
+      mapName: mapAttribute.mapTitle,
+      HeightDimensionTitle: 'title',
+      HeightDimensionUnit: 'unit',
+      ToneDimensionTitle: 'title',
+      ToneDimensionUnit: 'unit',
+      MaxToneHex: 'EEF588',
+      MinToneHex: '70a7f3',
+      author: mapAttribute.authorName,
+      authorEmail: mapAttribute.authorEmail,
+      sourceUrl: mapSource.urlLink,
+      sourceData: ''
+    });    
+    this.dbList.push({
+      mapName: mapAttribute.mapTitle,
+      HeightDimensionTitle: 'title',
+      HeightDimensionUnit: 'unit',
+      ToneDimensionTitle: 'title',
+      ToneDimensionUnit: 'unit',
+      MaxToneHex: 'EEF588',
+      MinToneHex: '70a7f3',
+      author: mapAttribute.authorName,
+      authorEmail: mapAttribute.authorEmail,
+      sourceUrl: mapSource.urlLink,
+      sourceData: ''
+    })
+    this.showEditMapPopup = !this.showEditMapPopup
   }
 
+  submitUrl = (formGroup: FormGroup) => {
+    // this.setupMap('GET_GOOGLE_SHEET')
+    this.showCreateMapPopup = !this.showCreateMapPopup
+    this.showEditMapPopup = !this.showEditMapPopup
+  }
+
+  disableBlur = (event:Event, submitBtn:any) => {
+    event.preventDefault()
+    submitBtn.focus()
+  }
+
+  trySubmit = (form:FormGroup) => {
+    console.log(form);
+    this.submitUrl(form)
+  }
 
   ngOnInit(): void {
   }
@@ -102,7 +131,16 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.setupLight()
     // this.setupBoxForTest()
     this.setupMap()
-    this.itemsRef.push({text:'name'})
+    this.dbList.snapshotChanges(['child_added']).subscribe(actions => {
+      actions.forEach(action => {
+        console.log(action.type);
+        console.log(action.key);
+        console.log(action.payload.val());
+      });
+    });
+    this.db.database.ref('maps').get().then(next => {
+      console.log(next)
+    })
   }
 
   transparentMesh = (mesh: Mesh, opacity: number = 0.6) => {
