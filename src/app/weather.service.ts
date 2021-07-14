@@ -6027,10 +6027,9 @@ export class WeatherService {
     return recordDistricts
   })
 
-  getGoogleSheetInfo = (): Observable<DistrictGraphData[]> => {
-    const sheeId = `1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q`
+  getGoogleSheetInfo = (googeSheetId:string = '1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q'): Observable<DistrictGraphData[]> => {
     // @ts-ignore
-    return this.httpclient.get<GoogleSheetRawData>(`https://docs.google.com/spreadsheets/d/${sheeId}/gviz/tq?`).pipe(
+    return this.httpclient.get<GoogleSheetRawData>(`https://docs.google.com/spreadsheets/d/${googeSheetId}/gviz/tq?`).pipe(
       this.convertGoogleSheetToDistrictGraphData,
       this.filterMalfunctionStation,
       this.averageHeightInDuplicateDistrict,

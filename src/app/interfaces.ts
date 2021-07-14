@@ -95,10 +95,10 @@ export class DistrictMeshData implements DistrictMeshData {
 }
 
 export interface googleSheetRawData {
-  version: string, 
-  reqId: string, 
-  status: string, 
-  sig: string, 
+  version: string,
+  reqId: string,
+  status: string,
+  sig: string,
   table: {
     cols: {
       id: string;
@@ -112,4 +112,19 @@ export interface googleSheetRawData {
     }[];
     parsedNumHeaders: number;
   }
+}
+
+export interface MapInfoInFirebase {
+  HeightDimensionTitle: string;
+  HeightDimensionUnit: string;
+  MaxToneHex: string;
+  MinToneHex: string;
+  ToneDimensionTitle: string;
+  ToneDimensionUnit: string;
+  author: string;
+  authorEmail: string;
+  mapName: string;
+  mapUrl: string;
+  sourceData: string;
+  sourceUrl: string;
 }
