@@ -83,7 +83,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   submitEditingMap = (mapAttribute: { authorName: string, authorEmail: string, mapTitle: string }, mapSource: { urlLink: string, goNextPopup: string }) => {
     this.showEditMapPopup = !this.showEditMapPopup
     this.showLinkPopup = !this.showLinkPopup
-
     const mapId = this.dbList.push({
       mapName: mapAttribute.mapTitle,
       HeightDimensionTitle: 'title',
@@ -103,6 +102,8 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       console.log(next.val())
       mapId.child('mapUrl').set(mapId.key)
       this.googleSheetId = mapId.key + ''
+      console.log(window.location.origin, window.location);
+      
       this.shareLink = window.location.origin + '/maps/' + mapId.key
     })
 
@@ -125,6 +126,11 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     event.preventDefault()
     submitBtn.click()
   }
+
+  copyShareLink = (btnElement:HTMLButtonElement, shareLink: string) => { 
+    btnElement.children[1].innerHTML = "複製成功！"
+    navigator.clipboard.writeText(shareLink)
+   }
 
   ngOnInit(): void {
     this.mapId = this.route.snapshot.paramMap.get('id') || '';
@@ -414,7 +420,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         ).delay(1).play()
     }
   }
-  move = 1
+  // move = 1
 
   setupMap = () => {
     const loader = new GLTFLoader()
@@ -431,7 +437,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       } else {
         // weather 資料
         this.weatherServer.getWeatherInfo().subscribe(graphData => {
-          gltf.scene.position.set(0, 0, this.move)
+          // gltf.scene.position.set(0, 0, this.move)
           this.mapGltf = gltf
           this.generateMap(graphData)
         });
@@ -455,8 +461,8 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     console.log(graphData);
     const gltf: GLTF = <GLTF>this.mapGltf
     if (this.taiwanMap) this.taiwanMap.removeFromParent()
-    gltf.scene.position.set(0, 0, this.move)
-    this.move++
+    // gltf.scene.position.set(0, 0, this.move)
+    // this.move++
     this.setupMeshData(graphData)
     this.setupMapMesh(gltf.scene)
     this.setupAndAnimateTexts()

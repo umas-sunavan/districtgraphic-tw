@@ -6055,8 +6055,8 @@ export class WeatherService {
   })
 
   convertGoogleSheetToDistrictGraphData = map((next): DistrictGraphData[] => {
-    console.log(next);
-    
+    console.log('Google Sheet Rawdata',next);
+    let count = 0
     
     const raw = <GoogleSheetRawData>next
     const firstRow = raw.table.rows[0].c
@@ -6067,8 +6067,6 @@ export class WeatherService {
     const timelineColumnIndex = firstRow.findIndex(cell => cell.v === "時間軸")
     const districtsGraphData: DistrictGraphData[] = raw.table.rows
       .map(row => {
-        console.log(heightColumnIndex, row.c[heightColumnIndex], JSON.stringify(row.c));
-        
         return {
           cityName: row.c[0].v,
           districtName: row.c[1].v,
@@ -6077,6 +6075,8 @@ export class WeatherService {
           meshText: undefined
         }
       })
+      console.log(districtsGraphData);
+      
     return districtsGraphData
   })
 

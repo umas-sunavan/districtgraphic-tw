@@ -8,7 +8,7 @@
   height: 95vh;
   flex-direction: column;
   pointer-events: none;
-  z-index:1;
+  z-index: 1;
 
   .overview-info {
     .web-title {
@@ -61,12 +61,13 @@
 
 .popup {
   padding: 4rem;
-  min-height: 70vh;
   background-color: #e3f2ffc7;
+
   .url-input-container input {
     border: none;
     border-bottom: solid 2px rgba(0, 136, 220, 0.68);
   }
+
   .url-input-container input::placeholder {
     color: #0088dc36;
   }
@@ -75,6 +76,18 @@
     width: 11rem;
     mix-blend-mode: luminosity;
   }
+
+  .share-link {
+    max-width: 50vw;
+    width: 40ch;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}
+
+.min-height-70 {
+  min-height: 70vh;
 }
 
 
@@ -107,6 +120,7 @@ h3 {
 
 p {
   font-size: 1.5rem;
+  margin: 0px;
 }
 
 a {

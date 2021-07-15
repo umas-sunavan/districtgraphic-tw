@@ -41,7 +41,8 @@
         </div>
     </div>
 </div>
-<div class="h-100 w-100 position-fixed popup-bg" [ngClass]="showCreateMapPopup? 'd-flex':'d-none'">
+<!-- 貼上地圖網址 -->
+<div class="h-100 w-100 position-fixed popup-bg min-height-70" [ngClass]="showCreateMapPopup? 'd-flex':'d-none'">
     <form #urlForm="ngForm" (ngSubmit)="submitUrl(urlForm.value)"
         class="rounded-theme justify-content-between popup m-auto d-flex flex-column">
         <div class="pb-5 d-flex justify-content-between align-items-stretch">
@@ -58,7 +59,7 @@
         </div>
         <div class="pb-5 d-flex justify-content-between align-items-stretch">
             <div class="step-1 d-flex flex-column">
-                <p class="theme-font-m-zh m-0">第一步</p>
+                <p class="theme-font-m-zh">第一步</p>
                 <div class="d-flex rounded-theme btn-primary btn-primary my-auto">
                     <a href="https://docs.google.com/spreadsheets/d/1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q/edit?usp=sharing"
                         target="_blank" class="text-white p-2">
@@ -81,8 +82,8 @@
                     stroke-linejoin="round" />
             </svg>
             <div class="step-2 w-100" class="d-flex flex-column">
-                <p class="theme-font-m-zh m-0">第二步</p>
-                <p class="theme-font-s-zh m-0 mb-2">建立副本</p>
+                <p class="theme-font-m-zh">第二步</p>
+                <p class="theme-font-s-zh mb-2">建立副本</p>
                 <img class="rounded-theme bg-white p-2" src="/assets/imgs/step-2.png" srcset="
                     /assets/imgs/step-2@1.5x.png 1.5x, 
                     /assets/imgs/step-2@2x.png 2x, 
@@ -94,8 +95,8 @@
                     stroke-linejoin="round" />
             </svg>
             <div class="step-3 w-100" class="d-flex flex-column">
-                <p class="theme-font-m-zh m-0">第三步</p>
-                <p class="theme-font-s-zh m-0 mb-2">編輯表單，開分享</p>
+                <p class="theme-font-m-zh">第三步</p>
+                <p class="theme-font-s-zh mb-2">編輯表單，開分享</p>
                 <img class="rounded-theme bg-white p-2" src="/assets/imgs/step-3.png" srcset="
                     /assets/imgs/step-3@1.5x.png 1.5x, 
                     /assets/imgs/step-3@2x.png 2x, 
@@ -103,30 +104,28 @@
             </div>
         </div>
         <div class="w-100" class="d-flex flex-column">
-            <p class="theme-font-m-zh m-0">最後</p>
-            <p class="theme-font-s-zh m-0 mb-2">貼上你的表單</p>
+            <p class="theme-font-m-zh">最後</p>
+            <p class="theme-font-s-zh mb-2">貼上你的表單</p>
             <div class="rounded-theme d-flex bg-white px-4 pt-4 url-input-container">
                 <div class="d-flex flex-column flex-grow-1">
-                    https://docs.google.com/spreadsheets/d/1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q/edit?usp=sharing
                     <input type="url" class="p-2 me-2 " #urlLink="ngModel" #urlLinkNativeTag
                         pattern="https://docs\.google\.com/spreadsheets/d/.+"
                         (keydown.enter)="clickSubmit($event, urlForm)"
                         placeholder="https://getbootstrap.com/docs/4.0/utilities/flex/" name="urlLink" ngModel required
-                        value="https://docs.google.com/spreadsheets/d/1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q/edit?usp=sharing"
                         pattern="https://docs\.google\.com/spreadsheets/d/.+">
-                    <p *ngIf="urlLink.touched" class="text-danger theme-font-s-zh d-invisible m-0">
+                    <p *ngIf="urlLink.touched" class="text-danger theme-font-s-zh d-invisible">
                         <span *ngIf="urlLink.errors?.required">此為必填</span>
                         <span *ngIf="urlLink.errors?.pattern">請貼上正確的Share Link.</span>
                     </p>
                 </div>
                 <input type="submit" [disabled]="!urlForm.valid" #submitUrlForm
-                    class="rounded-theme btn-primary py-2 mb-4 px-4  btn-primary" name="goNextPopup" ngModel="製作地圖">
+                    class="rounded-theme btn-primary py-2 mb-4 px-4" name="goNextPopup" ngModel="製作地圖">
             </div>
         </div>
     </form>
 </div>
-
-<div class="h-100 w-100 position-fixed popup-bg" [ngClass]="showEditMapPopup? 'd-flex':'d-none'">
+<!-- 編輯地圖屬性 -->
+<div class="h-100 w-100 position-fixed popup-bg min-height-70" [ngClass]="showEditMapPopup? 'd-flex':'d-none'">
     <form #editMapForm="ngForm" class="rounded-theme justify-content-between popup m-auto d-flex flex-column"
         (ngSubmit)="submitEditingMap(editMapForm.value, urlForm.value)">
         <div class="pb-5 d-flex justify-content-between align-items-center">
@@ -140,27 +139,24 @@
                 </svg>
             </button>
         </div>
-        作者名稱
         <div class="rounded-theme flex-column d-flex bg-white p-4 pt-3 mb-4 url-input-container">
-            <p class="theme-font-s-zh m-0 ps-2 ">作者名稱</p>
-            <input type="url" class="p-2" placeholder="煞氣的王小明" value="煞氣的王小明" name="authorName" ngModel required>
+            <p class="theme-font-s-zh ps-2 ">作者名稱</p>
+            <input type="url" class="p-2" placeholder="煞氣的王小明" name="authorName" ngModel required>
             <span class="text-danger theme-font-s-zh d-invisible m-0"
                 *ngIf="emailInput.touched && emailInput.errors?.required">此為必填</span>
         </div>
-        1234@email.com
         <div class="rounded-theme flex-column d-flex bg-white p-4 pt-3 mb-4 url-input-container">
-            <p class="theme-font-s-zh m-0 ps-2 ">電子郵件</p>
+            <p class="theme-font-s-zh ps-2 ">電子郵件</p>
             <input type="url" class="p-2" placeholder="1234@email.com" name="authorEmail" ngModel required
-                value="1234@email.com" #emailInput="ngModel" email pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$">
-            <p *ngIf="emailInput.touched" class="text-danger theme-font-s-zh d-invisible m-0">
+                #emailInput="ngModel" email pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$">
+            <p *ngIf="emailInput.touched" class="text-danger theme-font-s-zh d-invisible">
                 <span *ngIf="emailInput.errors?.required">此為必填</span>
                 <span *ngIf="emailInput.errors?.email">請貼上正確的Email</span>
             </p>
         </div>
-        煞氣的地圖
         <div class="rounded-theme flex-column d-flex bg-white p-4 pt-3 mb-4 url-input-container">
-            <p class="theme-font-s-zh m-0 ps-2 ">地圖標題</p>
-            <input type="url" class="p-2" placeholder="煞氣的地圖" name="mapTitle" ngModel required value="煞氣的地圖">
+            <p class="theme-font-s-zh ps-2 ">地圖標題</p>
+            <input type="url" class="p-2" placeholder="煞氣的地圖" name="mapTitle" ngModel required>
             <span class="text-danger theme-font-s-zh d-invisible m-0"
                 *ngIf="emailInput.touched && emailInput.errors?.required">此為必填</span>
         </div>
@@ -168,11 +164,11 @@
             name="uploadBtn" ngModel="建立地圖">
     </form>
 </div>
-
+<!-- 建立成功！ -->
 <div class="h-100 w-100 position-fixed popup-bg" [ngClass]="showLinkPopup? 'd-flex':'d-none'">
     <form #uploadedForm="ngForm" class="rounded-theme justify-content-between popup m-auto d-flex flex-column">
         <div class="pb-5 d-flex justify-content-between align-items-center">
-            <h1 class="zh font-size-m m-0aawsertyuuz theme-font">上傳成功！</h1>
+            <h1 class="zh font-size-m m-0aawsertyuuz theme-font">建立成功！</h1>
             <button class="btn bg-transparent border-0" (click)="showLinkPopup = !showLinkPopup">
                 <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 6.5L6 18.5" stroke="#0088DC" stroke-opacity="0.69" stroke-width="2"
@@ -183,13 +179,26 @@
             </button>
         </div>
         <div class="w-100" class="d-flex flex-column">
-            <p class="theme-font-s-zh m-0 mb-2">你的地圖網址為：{{shareLink}}</p>
+            <p class="theme-font-s-zh mb-2">你的地圖網址為：</p>
             <div class="rounded-theme d-flex bg-white px-4 pt-4 url-input-container">
-                <input type="text" class="p-2 me-3 d-flex flex-column flex-grow-1" [(ngModel)]="shareLink" value="q221e"
-                    name="mapLink">
-                <input type="button" class="rounded-theme btn-primary p-4" name="copyMapLink" ngModel="前往你的地圖"
-                    [routerLink]="['/maps',googleSheetId]" (click)="showLinkPopup = !showLinkPopup">
-                
+                <input type="text" class="share-link h-100 p-2 me-3 d-flex flex-column flex-grow-1"
+                    [(ngModel)]="shareLink" value="q221e" name="mapLink" #mapLink="ngModel">
+                <!-- <input type="button" class="rounded-theme btn-primary px-4 py-2 mb-3" name="copyMapLink"
+                    ngModel="前往你的地圖" [routerLink]="['/maps',googleSheetId]" (click)="showLinkPopup = !showLinkPopup"> -->
+
+                <button class="d-flex rounded-theme btn-primary px-3 py-2 mb-3" (click)="copyShareLink(copyLink,shareLink)"
+                    #copyLink> <svg width="20" height="20" viewBox="0 0 24 24"
+                        fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M20 9H11C9.89543 9 9 9.89543 9 11V20C9 21.1046 9.89543 22 11 22H20C21.1046 22 22 21.1046 22 20V11C22 9.89543 21.1046 9 20 9Z"
+                            stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <path
+                            d="M5 15H4C3.46957 15 2.96086 14.7893 2.58579 14.4142C2.21071 14.0391 2 13.5304 2 13V4C2 3.46957 2.21071 2.96086 2.58579 2.58579C2.96086 2.21071 3.46957 2 4 2H13C13.5304 2 14.0391 2.21071 14.4142 2.58579C14.7893 2.96086 15 3.46957 15 4V5"
+                            stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <p class="ps-2 font-size-s text-white">複製到剪貼簿</p>
+                </button>
+
             </div>
         </div>
     </form>
