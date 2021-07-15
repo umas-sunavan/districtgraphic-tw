@@ -102,8 +102,8 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       console.log(next.val())
       mapId.child('mapUrl').set(mapId.key)
       this.googleSheetId = mapId.key + ''
-      console.log(window.location.origin, window.location);
-      
+      console.log('window.location.origin, window.location', window.location.origin, window.location, this.getAddressInDynamicBaseUrl(''));
+
       this.shareLink = window.location.origin + '/maps/' + mapId.key
     })
 
@@ -127,10 +127,10 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     submitBtn.click()
   }
 
-  copyShareLink = (btnElement:HTMLButtonElement, shareLink: string) => { 
+  copyShareLink = (btnElement: HTMLButtonElement, shareLink: string) => {
     btnElement.children[1].innerHTML = "複製成功！"
     navigator.clipboard.writeText(shareLink)
-   }
+  }
 
   ngOnInit(): void {
     this.mapId = this.route.snapshot.paramMap.get('id') || '';
@@ -422,9 +422,11 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
   // move = 1
 
+  getAddressInDynamicBaseUrl = (relavieLink:string):string => this.ngLocation.prepareExternalUrl(relavieLink)
+
   setupMap = () => {
     const loader = new GLTFLoader()
-    loader.loadAsync(this.ngLocation.prepareExternalUrl('/assets/taiwam15.gltf')).then(gltf => {
+    loader.loadAsync(this.getAddressInDynamicBaseUrl('/assets/taiwam15.gltf')).then(gltf => {
       gltf.scene.scale.set(0.1, 0.1, 0.1)
 
       if (this.mapId !== "weather" && this.mapId !== undefined) {
