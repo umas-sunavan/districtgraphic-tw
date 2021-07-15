@@ -102,9 +102,9 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       console.log(next.val())
       mapId.child('mapUrl').set(mapId.key)
       this.googleSheetId = mapId.key + ''
-      console.log('window.location.origin, window.location', window.location.origin, window.location, this.getAddressInDynamicBaseUrl(''));
+      console.log('window.location.origin, window.location', window.location.origin, window.location, this.addBaseUrl(''));
 
-      this.shareLink = window.location.origin + '/maps/' + mapId.key
+      this.shareLink = window.location.origin + this.addBaseUrl('') + '/maps/' + mapId.key
     })
 
     this.googleSheetId = this.getIdFromGoogleSheetUrl(mapSource.urlLink)
@@ -422,11 +422,11 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
   // move = 1
 
-  getAddressInDynamicBaseUrl = (relavieLink:string):string => this.ngLocation.prepareExternalUrl(relavieLink)
+  addBaseUrl = (relavieLink:string):string => this.ngLocation.prepareExternalUrl(relavieLink)
 
   setupMap = () => {
     const loader = new GLTFLoader()
-    loader.loadAsync(this.getAddressInDynamicBaseUrl('/assets/taiwam15.gltf')).then(gltf => {
+    loader.loadAsync(this.addBaseUrl('/assets/taiwam15.gltf')).then(gltf => {
       gltf.scene.scale.set(0.1, 0.1, 0.1)
 
       if (this.mapId !== "weather" && this.mapId !== undefined) {
