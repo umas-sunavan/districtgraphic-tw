@@ -1,5 +1,4 @@
 import { AfterViewInit, Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
-import { Location as ngLocation } from '@angular/common';
 import gsap, { Power1 } from 'gsap';
 import { BackSide, BoxGeometry, CameraHelper, Color, CylinderGeometry, DirectionalLight, DirectionalLightHelper, Font, FontLoader, FrontSide, Group, HemisphereLight, HemisphereLightHelper, IcosahedronBufferGeometry, Intersection, IUniform, Light, LightShadow, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshPhongMaterial, MeshStandardMaterial, Object3D, PerspectiveCamera, PointLight, PointLightHelper, Raycaster, Scene, Shader, ShaderMaterial, SphereGeometry, SpotLight, SpotLightHelper, TextGeometry, Vector3, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
@@ -45,13 +44,12 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   showLinkPopup: boolean = false;
   shareLink: string = ''
   googleSheetId?: string
-  mapId?: string
+  mapId: string | undefined
 
   dbList: AngularFireList<any>
 
   constructor(
     private weatherServer: WeatherService,
-    private ngLocation: ngLocation,
     private db: AngularFireDatabase,
     private route: ActivatedRoute,
   ) {
@@ -81,59 +79,47 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   submitEditingMap = (mapAttribute: { authorName: string, authorEmail: string, mapTitle: string }, mapSource: { urlLink: string, goNextPopup: string }) => {
-    this.showEditMapPopup = !this.showEditMapPopup
-    this.showLinkPopup = !this.showLinkPopup
-    const mapId = this.dbList.push({
-      mapName: mapAttribute.mapTitle,
-      HeightDimensionTitle: 'title',
-      HeightDimensionUnit: 'unit',
-      ToneDimensionTitle: 'title',
-      ToneDimensionUnit: 'unit',
-      MaxToneHex: 'EEF588',
-      MinToneHex: '70a7f3',
-      author: mapAttribute.authorName,
-      authorEmail: mapAttribute.authorEmail,
-      sourceUrl: mapSource.urlLink,
-      sourceData: '',
-      mapUrl: 'null'
-    })
+    // this.showEditMapPopup = !this.showEditMapPopup
+    // this.showLinkPopup = !this.showLinkPopup
+    // const mapId = this.dbList.push({
+    //   mapName: mapAttribute.mapTitle,
+    //   HeightDimensionTitle: 'title',
+    //   HeightDimensionUnit: 'unit',
+    //   ToneDimensionTitle: 'title',
+    //   ToneDimensionUnit: 'unit',
+    //   MaxToneHex: 'EEF588',
+    //   MinToneHex: '70a7f3',
+    //   author: mapAttribute.authorName,
+    //   authorEmail: mapAttribute.authorEmail,
+    //   sourceUrl: mapSource.urlLink,
+    //   sourceData: '',
+    //   mapUrl: 'null'
+    // })
 
-    mapId.get().then(next => {
-      console.log(next.val())
-      mapId.child('mapUrl').set(mapId.key)
-      this.googleSheetId = mapId.key + ''
-      console.log('window.location.origin, window.location', window.location.origin, window.location, this.addBaseUrl(''));
+    // mapId.get().then(next => {
+    //   console.log(next.val())
+    //   mapId.child('mapUrl').set(mapId.key)
+    //   this.googleSheetId = mapId.key + ''
+    //   console.log('window.location.origin, window.location', window.location.origin, window.location, this.weatherServer.addBaseUrl(''));
 
-      this.shareLink = window.location.origin + this.addBaseUrl('') + '/maps/' + mapId.key
-    })
+    //   this.shareLink = window.location.origin + this.weatherServer.addBaseUrl('') + '/maps/' + mapId.key
+    // })
 
-    this.googleSheetId = this.getGoogleSheetIdFromUrl(mapSource.urlLink)
-    this.weatherServer.getGoogleSheetInfo(this.googleSheetId).subscribe(next => {
-      console.log(this.googleSheetId, next);
-      // 未來要改成不直接更新的話，就必須把全域的mapGltf改成區域變數
-      this.generateMap(next)
-    })
+    // this.googleSheetId = this.getGoogleSheetIdFromUrl(mapSource.urlLink)
+    // this.weatherServer.getGoogleSheetInfo(this.googleSheetId).subscribe(next => {
+    //   console.log(this.googleSheetId, next);
+    //   // 未來要改成不直接更新的話，就必須把全域的mapGltf改成區域變數
+    //   this.generateMap(next)
+    // })
   }
 
-  getGoogleSheetIdFromUrl = (link: string) => link.replace('https://docs.google.com/spreadsheets', '').split('/')[2] + ''
 
-  submitUrl = (formGroup: FormGroup) => {
-    this.showCreateMapPopup = !this.showCreateMapPopup
-    this.showEditMapPopup = !this.showEditMapPopup
-  }
 
-  clickSubmit = (event: Event, submitBtn: any) => {
-    event.preventDefault()
-    submitBtn.click()
-  }
 
-  copyShareLink = (btnElement: HTMLButtonElement, shareLink: string) => {
-    btnElement.children[1].innerHTML = "複製成功！"
-    navigator.clipboard.writeText(shareLink)
-  }
+
 
   ngOnInit(): void {
-    this.mapId = this.route.snapshot.paramMap.get('id') || '';
+    this.mapId = this.route.snapshot.paramMap.get('id') || undefined
     console.log(this.route.snapshot.paramMap.keys, this.mapId);
     // this.route.queryParams.subscribe(params => {
     // console.log(params['name'], params);
@@ -146,7 +132,12 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.setupScene()
     this.setupLight()
     // this.setupBoxForTest()
-    this.setupMap()
+    this.setUpTaiwan3dModel().then((Taiwan3dModel: GLTF) => {
+      this.mapGltf = Taiwan3dModel
+      Taiwan3dModel.scene.scale.set(0.1, 0.1, 0.1)
+      this.setupMap(this.mapId)
+    })
+
     this.dbList.snapshotChanges(['child_added']).subscribe(actions => {
       actions.forEach(action => {
         // console.log(action.type);
@@ -420,55 +411,43 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         ).delay(1).play()
     }
   }
-  // move = 1
 
-  addBaseUrl = (relavieLink: string): string => this.ngLocation.prepareExternalUrl(relavieLink)
-
-  setupMap = () => {
+  setUpTaiwan3dModel = () => {
     const loader = new GLTFLoader()
-    loader.loadAsync(this.addBaseUrl('/assets/taiwam15.gltf')).then(gltf => {
-      gltf.scene.scale.set(0.1, 0.1, 0.1)
+    return loader.loadAsync(this.weatherServer.addBaseUrl('/assets/taiwam15.gltf'))
 
-      if (this.mapId !== "weather" && this.mapId !== undefined) {
-        // this.getSheetIdFromFirebase(this.mapId)
-
-        // google sheet 資料
-        this.getSheetIdFromFirebase2(this.mapId).subscribe(googleSheetId => {
-          this.weatherServer.getGoogleSheetInfo(googleSheetId).subscribe(graphData => {
-            this.mapGltf = gltf
-            this.generateMap(graphData)
-          })
-        }
-        )
-
-      } else {
-        // weather 資料
-        this.weatherServer.getWeatherInfo().subscribe(graphData => {
-          // gltf.scene.position.set(0, 0, this.move)
-          this.mapGltf = gltf
-          this.generateMap(graphData)
-        });
-      }
-    })
   }
 
-  // getSheetIdFromFirebase = (mapId: string) => {
-  //   this.dbList.valueChanges().subscribe((next: MapInfoInFirebase[]) => {
-  //     console.log(next, mapId);
+  setupMap = (mapId?:string) => {
+    console.log(mapId);
+    
+    if (mapId) {
+      // google sheet 資料
+      this.getSheetIdFromFirebase(mapId).subscribe(googleSheetId => {
+        this.weatherServer.getGoogleSheetInfo(googleSheetId).subscribe(graphData => {
+          this.generateMap(graphData)
+        })
+      })
+    } else {
+      // weather 資料
+      this.weatherServer.getWeatherInfo().subscribe(graphData => {
+        // gltf.scene.position.set(0, 0, this.move)
+        this.generateMap(graphData)
+      });
+    }
+  }
 
-  //     const mapfirebaseData: MapInfoInFirebase = next.filter(eachMap => eachMap.mapUrl === mapId)[0]
-  //     console.log(mapfirebaseData, mapfirebaseData.sourceUrl);
+  generateMapfromFirebaseData = () => {
 
-  //     this.googleSheetId = this.getIdFromGoogleSheetUrl(mapfirebaseData.sourceUrl)
-  //     console.log(next, mapfirebaseData, this.googleSheetId);
-  //   })
-  // }
+  }
 
-  getSheetIdFromFirebase2 = (mapId: string): Observable<string> => {
+  getSheetIdFromFirebase = (mapId: string): Observable<string> => {
     return this.dbList.valueChanges().pipe(
       map((next: MapInfoInFirebase[]): string => {
+        console.log(next, mapId);
+        
         const currentMap: MapInfoInFirebase = next.filter(eachMap => eachMap.mapUrl === mapId)[0]
-        return this.getGoogleSheetIdFromUrl(currentMap.sourceUrl)
+        return this.weatherServer.getGoogleSheetIdFromUrl(currentMap.sourceUrl)
       })
     )
   }
@@ -571,7 +550,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
 
     const loader = new FontLoader()
-    loader.load(this.ngLocation.prepareExternalUrl('/assets/jf-openhuninn-1.1_Regular_districts_words.json'), ((font) => {
+    loader.load(this.weatherServer.addBaseUrl('/assets/jf-openhuninn-1.1_Regular_districts_words.json'), ((font) => {
       if (this.textsMeshAndColor.length !== 0) {
         this.textsMeshAndColor.forEach(textMesh => textMesh.textMesh.removeFromParent())
         this.textsMeshAndColor = []
@@ -674,7 +653,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   animate = () => {
-    if (this.renderer.info.render.frame < 9000) {
+    if (this.renderer.info.render.frame < 900) {
       requestAnimationFrame(this.animate);
     }
     this.renderer.render(this.scene, this.camera);

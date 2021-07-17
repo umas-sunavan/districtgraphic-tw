@@ -4,6 +4,8 @@ import { Observable, of } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { enZhMapping } from './en-zh-mapping';
 import { EnZhMap, WeatherData, ApiWeatherData, Location as ApiLocation, DistrictWeatherInfo, DistrictGraphData, googleSheetRawData as GoogleSheetRawData } from './interfaces';
+import { Location } from '@angular/common';
+import { AngularFireDatabase } from '@angular/fire/database';
 
 @Injectable({
   providedIn: 'root'
@@ -13,12 +15,41 @@ export class WeatherService {
 
   constructor(
     private httpclient: HttpClient,
+    private location: Location,
+    private db: AngularFireDatabase,
   ) {
 
   }
 
   // names we can find in the 3D model
   districtsEnZhMap: EnZhMap[] = enZhMapping
+  googleSheetId:string = ''
+
+  addBaseUrl = (relavieLink: string): string => this.location.prepareExternalUrl(relavieLink)
+  getGoogleSheetIdFromUrl = (link: string) => link.replace('https://docs.google.com/spreadsheets', '').split('/')[2] + ''
+
+  pushMapToFirebase = (mapAttribute: { authorName: string, authorEmail: string, mapTitle: string }, mapSource: { urlLink: string, goNextPopup: string }) => {
+    return this.db.list('maps').push({
+      mapName: mapAttribute.mapTitle,
+      HeightDimensionTitle: 'title',
+      HeightDimensionUnit: 'unit',
+      ToneDimensionTitle: 'title',
+      ToneDimensionUnit: 'unit',
+      MaxToneHex: 'EEF588',
+      MinToneHex: '70a7f3',
+      author: mapAttribute.authorName,
+      authorEmail: mapAttribute.authorEmail,
+      sourceUrl: mapSource.urlLink,
+      sourceData: '',
+      mapUrl: 'null'
+    })
+  }
+
+  setMapRefAsUrlToFirebase = (MapRef:any, url:string) => {
+    MapRef.child('mapUrl').set(url, () => {
+      console.log('window.location.origin, window.location', window.location.origin, window.location, this.addBaseUrl(''));
+    })
+  }
 
   findWeatherValue = (station: ApiLocation, elementName: string) => {
     const element = station.weatherElement.find(element => element.elementName === elementName)
