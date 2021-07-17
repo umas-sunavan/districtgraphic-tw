@@ -13,6 +13,7 @@ export class GraphInfoComponent implements OnInit {
   showEditMapPopup: boolean = false
   showLinkPopup: boolean = false
   shareLink: string = ''
+  showCreateMapPopup:boolean = false
   constructor(
     public weatherService: WeatherService,
   ) { }
@@ -20,10 +21,18 @@ export class GraphInfoComponent implements OnInit {
   @Input('mouseHoverDetalessMesh') mouseHoverDetalessMesh: boolean = false
   @Input('mouseHoveAnyMesh') mouseHoveAnyMesh: boolean = false
   @Input('meshDataOnHtml') meshDataOnHtml?: DistrictMeshData;
-  @Input('showCreateMapPopup') showCreateMapPopup: boolean = false;
   @Output() updateMapBySheetId = new EventEmitter<string>()
+  @Output() blurGraph = new EventEmitter<boolean>()
+
 
   ngOnInit(): void {
+  }
+
+  openCreateProcess = (btn:any) => {
+    console.log(btn);
+    this.blurGraph.emit(true)
+    this.showCreateMapPopup = !this.showCreateMapPopup; 
+    btn.blur()
   }
 
   submitUrl = (formGroup: FormGroup) => {
@@ -40,6 +49,7 @@ export class GraphInfoComponent implements OnInit {
     this.showEditMapPopup = !this.showEditMapPopup
     this.showLinkPopup = !this.showLinkPopup
     const pushedMapRef = this.weatherService.pushMapToFirebase(mapAttribute,mapSource)
+
 
     console.log(pushedMapRef.key);
     if (pushedMapRef.key) {

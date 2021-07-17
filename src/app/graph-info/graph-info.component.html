@@ -37,7 +37,7 @@
     </div>
     <div class="mt-auto d-flex flex-column">
         <button class="btn-secondary px-4 py-2 mb-3 btn-secondary theme-font bg-transparent">瀏覽所有地圖</button>
-        <button (click)="showCreateMapPopup = !showCreateMapPopup; openBtn.blur()"
+        <button (click)="openCreateProcess(openBtn)"
             class="btn btn-primary px-4 py-2 btn-primary" #openBtn>創建你的地圖！</button>
     </div>
 </div>
@@ -47,7 +47,7 @@
         class="rounded-theme justify-content-between popup m-auto d-flex flex-column">
         <div class="pb-5 d-flex justify-content-between align-items-stretch">
             <h1 class="zh font-size-m theme-font">建立你的地圖</h1>
-            <button class="btn bg-transparent border-0" (click)="showCreateMapPopup = !showCreateMapPopup"
+            <button class="btn bg-transparent border-0" (click)="this.blurGraph.emit(false); showCreateMapPopup = !showCreateMapPopup"
                 #closeUrlForm>
                 <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 6.5L6 18.5" stroke="#0088DC" stroke-opacity="0.69" stroke-width="2"
@@ -130,7 +130,7 @@
         (ngSubmit)="submitEditingMap(editMapForm.value, urlForm.value)">
         <div class="pb-5 d-flex justify-content-between align-items-center">
             <h1 class="zh font-size-m m-0aawsertyuuz theme-font">編輯地圖</h1>
-            <button class="btn bg-transparent border-0" (click)="showEditMapPopup = !showEditMapPopup">
+            <button class="btn bg-transparent border-0" (click)="this.blurGraph.emit(false); showEditMapPopup = !showEditMapPopup">
                 <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 6.5L6 18.5" stroke="#0088DC" stroke-opacity="0.69" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round" />
@@ -169,7 +169,7 @@
     <form #uploadedForm="ngForm" class="rounded-theme justify-content-between popup m-auto d-flex flex-column">
         <div class="pb-5 d-flex justify-content-between align-items-center">
             <h1 class="zh font-size-m m-0aawsertyuuz theme-font">建立成功！</h1>
-            <button class="btn bg-transparent border-0" (click)="showLinkPopup = !showLinkPopup">
+            <button class="btn bg-transparent border-0" (click)="this.blurGraph.emit(false); showLinkPopup = !showLinkPopup">
                 <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 6.5L6 18.5" stroke="#0088DC" stroke-opacity="0.69" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round" />
