@@ -373,7 +373,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   setupMap = (mapId?: string) => {
     console.log(mapId);
 
-    if (mapId) {
+    if (mapId && mapId !== 'weather') {
       // google sheet 資料
       this.getSheetIdFromFirebase(mapId).subscribe(googleSheetId => {
         this.weatherServer.getGoogleSheetInfo(googleSheetId).subscribe(graphData => {
