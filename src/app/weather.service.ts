@@ -6027,9 +6027,9 @@ export class WeatherService {
     return recordDistricts
   })
 
-  getGoogleSheetInfo = (googeSheetId:string = '1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q'): Observable<DistrictGraphData[]> => {
-    console.log('googeSheetId: ',googeSheetId);
-    
+  getGoogleSheetInfo = (googeSheetId: string = '1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q'): Observable<DistrictGraphData[]> => {
+    console.log('googeSheetId: ', googeSheetId);
+
     // @ts-ignore
     return this.httpclient.get<GoogleSheetRawData>(`https://docs.google.com/spreadsheets/d/${googeSheetId}/gviz/tq?`).pipe(
       this.convertGoogleSheetToDistrictGraphData,
@@ -6057,17 +6057,18 @@ export class WeatherService {
   })
 
   convertGoogleSheetToDistrictGraphData = map((next): DistrictGraphData[] => {
-    console.log('Google Sheet Rawdata',next);
+    console.log('Google Sheet Rawdata', next);
     let count = 0
-    
+
     const raw = <GoogleSheetRawData>next
     const firstRow = raw.table.rows[0].c
-    const zhCityColumnIndex = firstRow.findIndex(cell => cell.v === '縣市')
-    const zhDistrictColumnIndex = firstRow.findIndex(cell => cell.v === "行政區")
-    const heightColumnIndex = firstRow.findIndex(cell => cell.v === "高度")
-    const toneColumnIndex = firstRow.findIndex(cell => cell.v === "色調")
-    const timelineColumnIndex = firstRow.findIndex(cell => cell.v === "時間軸")
+    // const zhCityColumnIndex = firstRow.findIndex(cell => cell.v === '縣市')
+    // const zhDistrictColumnIndex = firstRow.findIndex(cell => cell.v === "行政區")
+    // const heightColumnIndex = firstRow.findIndex(cell => cell.v === "高度")
+    // const toneColumnIndex = firstRow.findIndex(cell => cell.v === "色調")
+    // const timelineColumnIndex = firstRow.findIndex(cell => cell.v === "時間軸")
     const districtsGraphData: DistrictGraphData[] = raw.table.rows
+      .filter((row, index) => index !== 0)
       .map(row => {
         return {
           cityName: row.c[0].v,
@@ -6077,8 +6078,8 @@ export class WeatherService {
           meshText: undefined
         }
       })
-      console.log(districtsGraphData);
-      
+    console.log(districtsGraphData);
+
     return districtsGraphData
   })
 
@@ -6090,7 +6091,7 @@ export class WeatherService {
       const isMalfunction = isHighestTempMalfunction || isRainMalfunction
       if (isMalfunction) {
         console.log(`站台 ${JSON.stringify(station)} 運作不正常`);
-        
+
       }
       return !isMalfunction
     })

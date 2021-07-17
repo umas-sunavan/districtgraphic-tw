@@ -107,7 +107,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       this.shareLink = window.location.origin + this.addBaseUrl('') + '/maps/' + mapId.key
     })
 
-    this.googleSheetId = this.getIdFromGoogleSheetUrl(mapSource.urlLink)
+    this.googleSheetId = this.getGoogleSheetIdFromUrl(mapSource.urlLink)
     this.weatherServer.getGoogleSheetInfo(this.googleSheetId).subscribe(next => {
       console.log(this.googleSheetId, next);
       // 未來要改成不直接更新的話，就必須把全域的mapGltf改成區域變數
@@ -115,7 +115,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     })
   }
 
-  getIdFromGoogleSheetUrl = (link: string) => link.replace('https://docs.google.com/spreadsheets', '').split('/')[2] + ''
+  getGoogleSheetIdFromUrl = (link: string) => link.replace('https://docs.google.com/spreadsheets', '').split('/')[2] + ''
 
   submitUrl = (formGroup: FormGroup) => {
     this.showCreateMapPopup = !this.showCreateMapPopup
@@ -135,9 +135,9 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   ngOnInit(): void {
     this.mapId = this.route.snapshot.paramMap.get('id') || '';
     console.log(this.route.snapshot.paramMap.keys, this.mapId);
-    this.route.queryParams.subscribe(params => {
-      console.log(params['name'], params);
-    });
+    // this.route.queryParams.subscribe(params => {
+    // console.log(params['name'], params);
+    // });
   }
 
   ngAfterViewInit() {
@@ -422,7 +422,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
   // move = 1
 
-  addBaseUrl = (relavieLink:string):string => this.ngLocation.prepareExternalUrl(relavieLink)
+  addBaseUrl = (relavieLink: string): string => this.ngLocation.prepareExternalUrl(relavieLink)
 
   setupMap = () => {
     const loader = new GLTFLoader()
@@ -430,12 +430,17 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       gltf.scene.scale.set(0.1, 0.1, 0.1)
 
       if (this.mapId !== "weather" && this.mapId !== undefined) {
+        // this.getSheetIdFromFirebase(this.mapId)
+
         // google sheet 資料
-        this.getSheetIdFromFirebase(this.mapId)
-        this.weatherServer.getGoogleSheetInfo(this.googleSheetId).subscribe(graphData => {
-          this.mapGltf = gltf
-          this.generateMap(graphData)
-        })
+        this.getSheetIdFromFirebase2(this.mapId).subscribe(googleSheetId => {
+          this.weatherServer.getGoogleSheetInfo(googleSheetId).subscribe(graphData => {
+            this.mapGltf = gltf
+            this.generateMap(graphData)
+          })
+        }
+        )
+
       } else {
         // weather 資料
         this.weatherServer.getWeatherInfo().subscribe(graphData => {
@@ -447,16 +452,25 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     })
   }
 
-  getSheetIdFromFirebase = (mapId: string) => {
-    this.dbList.valueChanges().subscribe((next: MapInfoInFirebase[]) => {
-      console.log(next, mapId);
+  // getSheetIdFromFirebase = (mapId: string) => {
+  //   this.dbList.valueChanges().subscribe((next: MapInfoInFirebase[]) => {
+  //     console.log(next, mapId);
 
-      const mapfirebaseData: MapInfoInFirebase = next.filter(eachMap => eachMap.mapUrl === mapId)[0]
-      console.log(mapfirebaseData, mapfirebaseData.sourceUrl);
+  //     const mapfirebaseData: MapInfoInFirebase = next.filter(eachMap => eachMap.mapUrl === mapId)[0]
+  //     console.log(mapfirebaseData, mapfirebaseData.sourceUrl);
 
-      this.googleSheetId = this.getIdFromGoogleSheetUrl(mapfirebaseData.sourceUrl)
-      console.log(next, mapfirebaseData, this.googleSheetId);
-    })
+  //     this.googleSheetId = this.getIdFromGoogleSheetUrl(mapfirebaseData.sourceUrl)
+  //     console.log(next, mapfirebaseData, this.googleSheetId);
+  //   })
+  // }
+
+  getSheetIdFromFirebase2 = (mapId: string): Observable<string> => {
+    return this.dbList.valueChanges().pipe(
+      map((next: MapInfoInFirebase[]): string => {
+        const currentMap: MapInfoInFirebase = next.filter(eachMap => eachMap.mapUrl === mapId)[0]
+        return this.getGoogleSheetIdFromUrl(currentMap.sourceUrl)
+      })
+    )
   }
 
   generateMap = (graphData: DistrictGraphData[]) => {
