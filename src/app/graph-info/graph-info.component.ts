@@ -29,7 +29,6 @@ export class GraphInfoComponent implements OnInit {
   }
 
   openCreateProcess = (btn:any) => {
-    console.log(btn);
     this.blurGraph.emit(true)
     this.showCreateMapPopup = !this.showCreateMapPopup; 
     btn.blur()

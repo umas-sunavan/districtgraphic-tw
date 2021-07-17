@@ -1,4 +1,4 @@
 {
   "port": 8000,
-  "server": { "baseDir": "./docs/districtgraphic-tw" }
+  "server": { "baseDir": "./docs/" }
 }
