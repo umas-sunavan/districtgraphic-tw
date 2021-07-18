@@ -41,6 +41,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   mapGltf?: GLTF
   showCreateMapPopup: boolean = false;
   ToneColor: { maxHex: string, minHex: string } = { maxHex: 'EEF588', minHex: '70a7f3' }
+  units: {tone: string, height:string } = {tone: '降雨量', height:'溫' }
 
   dbList: AngularFireList<any>
 
@@ -376,10 +377,9 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
     if (mapId && mapId !== 'weather') {
       // google sheet 資料
-      this.getDataFromFirebase().subscribe(maps => {
-        const currentMap: MapInfoInFirebase = maps.filter(map => map.mapUrl === mapId)[0]
-        this.setupTone(currentMap)
-        const googleSheetId = this.weatherServer.getGoogleSheetIdFromUrl(currentMap.sourceUrl)
+      this.weatherServer.getMapDataFromFirebase(mapId).subscribe( mapData => {
+        this.setupTone(mapData)
+        const googleSheetId = this.weatherServer.getGoogleSheetIdFromUrl(mapData.sourceUrl)
         this.weatherServer.getGoogleSheetInfo(googleSheetId).subscribe(graphData => {
           this.generateMap(graphData)
         })
@@ -396,22 +396,8 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   setupTone = (mapInfo: MapInfoInFirebase) => {
     this.ToneColor.maxHex = mapInfo.MaxToneHex
     this.ToneColor.minHex = mapInfo.MinToneHex
-  }
-
-  getDataFromFirebase = (): Observable<MapInfoInFirebase[]> => {
-    return this.dbList.valueChanges()
-  }
-
-  getSheetIdFromFirebase = (mapId: string): Observable<string> => {
-    return this.dbList.valueChanges().pipe(
-      map((next: MapInfoInFirebase[]): string => {
-        console.log(next, mapId);
-        const currentMap: MapInfoInFirebase = next.filter(eachMap => eachMap.mapUrl === mapId)[0]
-        this.ToneColor.maxHex = currentMap.MaxToneHex
-        this.ToneColor.minHex = currentMap.MinToneHex
-        return this.weatherServer.getGoogleSheetIdFromUrl(currentMap.sourceUrl)
-      })
-    )
+    this.units.height = mapInfo.HeightDimensionUnit
+    this.units.tone = mapInfo.ToneDimensionUnit
   }
 
   generateMap = (graphData: DistrictGraphData[]) => {
@@ -522,9 +508,9 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       const maxHeightTitleMesh = this.createTextMesh(font, maxHeightMesh.mesh3d, maxHeightMesh.zhDistrictName, maxHeightMesh.rgbColor)
       // const minHeightTitleMesh = this.createTextMesh(font, minHeightMesh.mesh3d, minHeightMesh.zhDistrictName, minHeightMesh.rgbColor)
 
-      const maxToneSubtitleMesh = this.createTextMesh(font, maxToneMesh.mesh3d, `最高溫 ${Math.round(+maxToneMesh.tone * 10) / 10}度`, maxToneMesh.rgbColor)
-      const minToneSubtitleMesh = this.createTextMesh(font, minToneMesh.mesh3d, `最低溫 ${Math.round(+minToneMesh.tone * 10) / 10}度`, minToneMesh.rgbColor)
-      const maxHeightSubtitle = this.createTextMesh(font, maxHeightMesh.mesh3d, `最高降雨量 ${Math.round(+maxHeightMesh.height * 10) / 10}mm`, maxHeightMesh.rgbColor)
+      const maxToneSubtitleMesh = this.createTextMesh(font, maxToneMesh.mesh3d, `最高${this.units.tone} ${Math.round(+maxToneMesh.tone * 10) / 10}`, maxToneMesh.rgbColor)
+      const minToneSubtitleMesh = this.createTextMesh(font, minToneMesh.mesh3d, `最低${this.units.tone} ${Math.round(+minToneMesh.tone * 10) / 10}`, minToneMesh.rgbColor)
+      const maxHeightSubtitle = this.createTextMesh(font, maxHeightMesh.mesh3d, `最高${this.units.height} ${Math.round(+maxHeightMesh.height * 10) / 10}`, maxHeightMesh.rgbColor)
       // const minHeightSubtitle = this.createTextMesh(font, minHeightMesh.mesh3d, `最高降雨量 ${Math.round(+minHeightMesh.height * 10) / 10}mm`, minHeightMesh.rgbColor)
 
       const maxToneMeshGroup = this.createTextMeshGroup(maxToneTitleMesh, maxToneSubtitleMesh)
@@ -615,9 +601,9 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   animate = () => {
-    if (this.renderer.info.render.frame < 90) {
+    // if (this.renderer.info.render.frame < 90) {
       requestAnimationFrame(this.animate);
-    }
+    // }
     this.renderer.render(this.scene, this.camera);
   };
 }

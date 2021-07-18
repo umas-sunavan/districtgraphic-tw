@@ -3,9 +3,10 @@ import { HttpClient, HttpHeaders, HttpParams, HttpRequest } from '@angular/commo
 import { Observable, of } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { enZhMapping } from './en-zh-mapping';
-import { EnZhMap, WeatherData, ApiWeatherData, Location as ApiLocation, DistrictWeatherInfo, DistrictGraphData, googleSheetRawData as GoogleSheetRawData } from './interfaces';
+import { EnZhMap, WeatherData, ApiWeatherData, Location as ApiLocation, DistrictWeatherInfo, DistrictGraphData, googleSheetRawData as GoogleSheetRawData, MapInfoInFirebase } from './interfaces';
 import { Location } from '@angular/common';
 import { AngularFireDatabase } from '@angular/fire/database';
+import { ActivatedRoute } from '@angular/router';
 
 @Injectable({
   providedIn: 'root'
@@ -17,6 +18,7 @@ export class WeatherService {
     private httpclient: HttpClient,
     private location: Location,
     private db: AngularFireDatabase,
+    private route: ActivatedRoute,
   ) {
 
   }
@@ -32,9 +34,9 @@ export class WeatherService {
     return this.db.list('maps').push({
       mapName: mapAttribute.mapTitle,
       HeightDimensionTitle: mapAttribute.heightTitle,
-      HeightDimensionUnit: 'unit',
+      HeightDimensionUnit: '',
       ToneDimensionTitle: mapAttribute.toneTitle,
-      ToneDimensionUnit: 'unit',
+      ToneDimensionUnit: '',
       MaxToneHex: toneGradient.gradientEnd,
       MinToneHex: toneGradient.gradientStart,
       author: mapAttribute.authorName,
@@ -6070,6 +6072,12 @@ export class WeatherService {
       this.averageToneInDuplicateDistrict,
       this.filterDuplicatedDistrict,
     )
+  }
+
+  getMapDataFromFirebase = (mapId:string):Observable<MapInfoInFirebase> => {
+    return this.db.list('maps').valueChanges().pipe( map( (mapsInfo:any[]):MapInfoInFirebase => {
+      return (<MapInfoInFirebase[]>mapsInfo).filter(map => map.mapUrl === mapId)[0]
+    }))
   }
 
   convertWeatherApiToDistrictGraphData = map((next: WeatherData): DistrictGraphData[] => {

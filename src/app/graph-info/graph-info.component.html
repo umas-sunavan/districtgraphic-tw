@@ -19,9 +19,9 @@
             <h3 class="en font-size-m">{{this.meshDataOnHtml.enCityName.split("_").join()}}</h3>
         </div>
         <div class="mt-auto mb-auto" *ngIf="this.meshDataOnHtml">
-            <small class="zh font-size-s">今日降雨量</small>
+            <small class="zh font-size-s">{{heightDimensionTitle}}</small>
             <h3 class="en font-size-l">{{this.meshDataOnHtml.height | number: '1.1-1'}}</h3>
-            <small class="zh font-size-s">本日最高溫</small>
+            <small class="zh font-size-s">{{toneDimensionTitle}}</small>
             <h3 class="en font-size-l">{{this.meshDataOnHtml.tone | number: '1.1-1'}}</h3>
         </div>
     </div>
