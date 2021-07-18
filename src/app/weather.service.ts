@@ -28,19 +28,20 @@ export class WeatherService {
   addBaseUrl = (relavieLink: string): string => this.location.prepareExternalUrl(relavieLink)
   getGoogleSheetIdFromUrl = (link: string) => link.replace('https://docs.google.com/spreadsheets', '').split('/')[2] + ''
 
-  pushMapToFirebase = (mapAttribute: { authorName: string, authorEmail: string, mapTitle: string }, mapSource: { urlLink: string, goNextPopup: string }) => {
+  pushMapToFirebase = (mapAttribute: { authorName: string, authorEmail: string, mapTitle: string, toneTitle:string, heightTitle:string }, toneGradient:{ gradientStart: string, gradientEnd: string }, mapSource: { urlLink: string, goNextPopup: string }) => {
     return this.db.list('maps').push({
       mapName: mapAttribute.mapTitle,
-      HeightDimensionTitle: 'title',
+      HeightDimensionTitle: mapAttribute.heightTitle,
       HeightDimensionUnit: 'unit',
-      ToneDimensionTitle: 'title',
+      ToneDimensionTitle: mapAttribute.toneTitle,
       ToneDimensionUnit: 'unit',
-      MaxToneHex: 'EEF588',
-      MinToneHex: '70a7f3',
+      MaxToneHex: toneGradient.gradientEnd,
+      MinToneHex: toneGradient.gradientStart,
       author: mapAttribute.authorName,
       authorEmail: mapAttribute.authorEmail,
       sourceUrl: mapSource.urlLink,
       sourceData: '',
+      createDate: new Date().toString(),
       mapUrl: 'null'
     })
   }

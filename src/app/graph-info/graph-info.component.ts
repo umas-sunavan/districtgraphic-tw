@@ -3,6 +3,8 @@ import { AngularFireDatabase } from '@angular/fire/database';
 import { FormControl, FormGroup } from '@angular/forms';
 import { DistrictMeshData } from '../interfaces';
 import { WeatherService } from '../weather.service';
+import { Router, ActivatedRoute, ParamMap } from '@angular/router';
+
 
 @Component({
   selector: 'app-graph-info',
@@ -13,9 +15,20 @@ export class GraphInfoComponent implements OnInit {
   showEditMapPopup: boolean = false
   showLinkPopup: boolean = false
   shareLink: string = ''
-  showCreateMapPopup:boolean = false
+  showCreateMapPopup: boolean = false
+  mapName: string = '台灣天氣資訊地圖'
+  author: string = '伍瑪斯'
+  gradientPickers: any[] = [
+    { gradientStart: 'F8FF8B', gradientEnd: 'F38461' },
+    { gradientStart: 'EEF588', gradientEnd: '70A7F3' },
+    { gradientStart: 'FFB9D2', gradientEnd: '88B4EF' },
+    { gradientStart: 'BF4A4A', gradientEnd: 'DC7EC7' },
+    { gradientStart: '94F9C8', gradientEnd: '89BBFF' },
+  ]
+  gradientSelectedIndex:number = 0
   constructor(
     public weatherService: WeatherService,
+    private router: Router,
   ) { }
   @Input('districtColor') htmlTextColor: string = ''
   @Input('mouseHoverDetalessMesh') mouseHoverDetalessMesh: boolean = false
@@ -28,9 +41,9 @@ export class GraphInfoComponent implements OnInit {
   ngOnInit(): void {
   }
 
-  openCreateProcess = (btn:any) => {
+  openCreateProcess = (btn: any) => {
     this.blurGraph.emit(true)
-    this.showCreateMapPopup = !this.showCreateMapPopup; 
+    this.showCreateMapPopup = !this.showCreateMapPopup;
     btn.blur()
   }
 
@@ -44,18 +57,19 @@ export class GraphInfoComponent implements OnInit {
     submitBtn.click()
   }
 
-  submitEditingMap = (mapAttribute: { authorName: string, authorEmail: string, mapTitle: string }, mapSource: { urlLink: string, goNextPopup: string }) => {
+  submitEditingMap = (mapAttribute: { authorName: string, authorEmail: string, mapTitle: string, toneTitle:string, heightTitle:string }, toneGradient:{ gradientStart: string, gradientEnd: string }, mapSource: { urlLink: string, goNextPopup: string }) => {
     this.showEditMapPopup = !this.showEditMapPopup
     this.showLinkPopup = !this.showLinkPopup
-    const pushedMapRef = this.weatherService.pushMapToFirebase(mapAttribute,mapSource)
+    this.mapName = mapAttribute.mapTitle
+    this.author = mapAttribute.authorName
 
-
-    console.log(pushedMapRef.key);
+    const pushedMapRef = this.weatherService.pushMapToFirebase(mapAttribute,toneGradient, mapSource)
     if (pushedMapRef.key) {
-      const mapId:string = pushedMapRef.key
-      this.weatherService.setMapRefAsUrlToFirebase(pushedMapRef,mapId)
+      const mapId: string = pushedMapRef.key
+      this.router.navigate(['/maps', mapId]);
+      this.weatherService.setMapRefAsUrlToFirebase(pushedMapRef, mapId)
       this.shareLink = window.location.origin + this.weatherService.addBaseUrl('') + 'maps/' + mapId
-      this.updateMapBySheetId.emit(mapId)    
+      this.updateMapBySheetId.emit(mapId)
     }
   }
 

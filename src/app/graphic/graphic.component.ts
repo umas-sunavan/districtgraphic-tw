@@ -40,6 +40,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   box2: Object3D
   mapGltf?: GLTF
   showCreateMapPopup: boolean = false;
+  ToneColor: { maxHex: string, minHex: string } = { maxHex: 'EEF588', minHex: '70a7f3' }
 
   dbList: AngularFireList<any>
 
@@ -333,7 +334,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
   getMaterialColorByRate = (highestTemp: number, lowestTemp: number, currentTemp: number): { r: number, g: number, b: number, } => {
     const colorRate = (currentTemp - highestTemp) / (lowestTemp - highestTemp)
-    const hashColor = this.blendHexColors('#EEF588', '#70a7f3', colorRate)
+    const hashColor = this.blendHexColors('#' + this.ToneColor.maxHex, '#' + this.ToneColor.minHex, colorRate)
     return this.convertHexTo0to1(hashColor)
   }
 
@@ -375,7 +376,10 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
     if (mapId && mapId !== 'weather') {
       // google sheet 資料
-      this.getSheetIdFromFirebase(mapId).subscribe(googleSheetId => {
+      this.getDataFromFirebase().subscribe(maps => {
+        const currentMap: MapInfoInFirebase = maps.filter(map => map.mapUrl === mapId)[0]
+        this.setupTone(currentMap)
+        const googleSheetId = this.weatherServer.getGoogleSheetIdFromUrl(currentMap.sourceUrl)
         this.weatherServer.getGoogleSheetInfo(googleSheetId).subscribe(graphData => {
           this.generateMap(graphData)
         })
@@ -389,16 +393,22 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     }
   }
 
-  generateMapfromFirebaseData = () => {
+  setupTone = (mapInfo: MapInfoInFirebase) => {
+    this.ToneColor.maxHex = mapInfo.MaxToneHex
+    this.ToneColor.minHex = mapInfo.MinToneHex
+  }
 
+  getDataFromFirebase = (): Observable<MapInfoInFirebase[]> => {
+    return this.dbList.valueChanges()
   }
 
   getSheetIdFromFirebase = (mapId: string): Observable<string> => {
     return this.dbList.valueChanges().pipe(
       map((next: MapInfoInFirebase[]): string => {
         console.log(next, mapId);
-
         const currentMap: MapInfoInFirebase = next.filter(eachMap => eachMap.mapUrl === mapId)[0]
+        this.ToneColor.maxHex = currentMap.MaxToneHex
+        this.ToneColor.minHex = currentMap.MinToneHex
         return this.weatherServer.getGoogleSheetIdFromUrl(currentMap.sourceUrl)
       })
     )
@@ -605,9 +615,9 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   animate = () => {
-    // if (this.renderer.info.render.frame < 900) {
+    if (this.renderer.info.render.frame < 90) {
       requestAnimationFrame(this.animate);
-    // }
+    }
     this.renderer.render(this.scene, this.camera);
   };
 }
