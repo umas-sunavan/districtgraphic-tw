@@ -279,7 +279,7 @@
             <a [routerLink]="['/maps', map.mapUrl]" (click)="clickMapLink(map.mapUrl)" *ngFor="let map of allMaps"
                 class="mb-4 border-0 align-items-stretch rounded-theme d-flex bg-white p-4"
                 style="text-decoration: none;">
-                <div type="button" class="me-3 gradient-picker gradient-selected"></div>
+                <div type="button" class="me-3 gradient-picker gradient-selected" [ngStyle]="{'background-image': 'linear-gradient(to top,#' + map.MaxToneHex + ', #' + map.MinToneHex + ')'}"></div>
                 <div class="d-flex flex-column me-auto">
                     <p class="theme-font-m-zh">{{map.mapName}}</p>
                     <p class="theme-font-s-zh">包含{{map.ToneDimensionTitle}}{{map.HeightDimensionTitle}}資料</p>

@@ -31,7 +31,7 @@ export class WeatherService {
   getGoogleSheetIdFromUrl = (link: string) => link.replace('https://docs.google.com/spreadsheets', '').split('/')[2] + ''
 
   pushMapToFirebase = (mapAttribute: MapAttributeForm, toneGradient:ToneGradient, mapSource: MapSource) => {
-    console.log(mapAttribute);
+    console.log(mapAttribute, mapAttribute.requireHeightDimension, mapAttribute.requireToneDimension);
     
     return this.db.list('maps').push({
       mapName: mapAttribute.mapTitle,
@@ -42,13 +42,13 @@ export class WeatherService {
       MaxToneHex: toneGradient.gradientEnd,
       MinToneHex: toneGradient.gradientStart,
       author: mapAttribute.authorName,
-      authorEmail: mapAttribute.authorEmail,
+      authorEmail: mapAttribute.authorEmail + '',
       sourceUrl: mapSource.urlLink,
       sourceData: '',
       createDate: new Date().toString(),
       mapUrl: 'null',
-      requireHeightDimension: mapAttribute.requireToneDimension + '',
-      requireToneDimension: mapAttribute.requireToneDimension + '',
+      requireHeightDimension: mapAttribute.requireHeightDimension.toString(),
+      requireToneDimension: mapAttribute.requireToneDimension.toString(),
     })
   }
 
