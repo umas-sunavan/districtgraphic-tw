@@ -35,7 +35,8 @@
         <h3 class="en font-size-s">Explore by moving your mouse.</h3>
     </div>
     <div class="mt-auto d-flex flex-column">
-        <button class="btn-secondary px-4 py-2 mb-3 btn-secondary theme-font bg-transparent">瀏覽所有地圖</button>
+        <button (click)="openBrowseMaps(openBtn)"
+            class="btn-secondary px-4 py-2 mb-3 btn-secondary theme-font bg-transparent">瀏覽所有地圖</button>
         <button (click)="openCreateProcess(openBtn)" class="btn btn-primary px-4 py-2 btn-primary"
             #openBtn>創建你的地圖！</button>
     </div>
@@ -234,4 +235,42 @@
             </div>
         </div>
     </form>
+</div>
+<!-- 瀏覽所有地圖 -->
+<div class="h-100 w-100 position-fixed popup-bg min-height-70" [ngClass]="showBrowseMapsPopup? 'd-flex':'d-none'">
+    <div class="w-75 ounded-theme justify-content-between popup m-auto d-flex flex-column">
+        <div class="pb-5 d-flex justify-content-between align-items-stretch">
+            <h1 class="zh font-size-m theme-font">其他網友製作的地圖</h1>
+            <button class="btn bg-transparent border-0"
+                (click)="this.blurGraph.emit(false); showBrowseMapsPopup = !showBrowseMapsPopup" #closeUrlForm>
+                <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 6.5L6 18.5" stroke="#0088DC" stroke-opacity="0.69" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M6 6.5L18 18.5" stroke="#0088DC" stroke-opacity="0.69" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </button>
+        </div>
+        <div class="list-container">
+            <a [routerLink]="['/maps', map.mapUrl]" (click)="clickMapLink(map.mapUrl)" *ngFor="let map of allMaps"
+                class="mb-4 border-0 align-items-stretch rounded-theme d-flex bg-white p-4"
+                style="text-decoration: none;">
+                <div type="button" class="me-3 gradient-picker gradient-selected"></div>
+                <div class="d-flex flex-column me-auto">
+                    <p class="theme-font-m-zh">{{map.mapName}}</p>
+                    <p class="theme-font-s-zh">包含{{map.ToneDimensionTitle}}{{map.HeightDimensionTitle}}資料</p>
+                </div>
+                <div class="d-flex flex-column justify-content-end">
+                    <p class="theme-font-s-zh" style="text-align: right">{{map.author}}製作</p>
+                    <p class="theme-font-s-zh" style="text-align: right">{{map.createDate |date:"MM/dd/yy"}}</p>
+                </div>
+                <div class="align-items-center px-2 d-flex">
+                    <svg width="25" height="25" viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9.84131 18.9644L15.8413 12.9644L9.84131 6.96439" stroke="#0088DC"
+                            stroke-opacity="0.69" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+            </a>
+        </div>
+    </div>
 </div>

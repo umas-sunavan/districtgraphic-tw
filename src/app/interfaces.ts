@@ -127,5 +127,5 @@ export interface MapInfoInFirebase {
   mapUrl: string;
   sourceData: string;
   sourceUrl: string;
-  createDate: string;
+  createDate: any;
 }

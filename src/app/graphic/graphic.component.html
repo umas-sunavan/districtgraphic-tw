@@ -4,8 +4,8 @@
             [mouseHoveAnyMesh]="mouseHoveAnyMesh"
             [meshDataOnHtml]="meshDataOnHtml"
             (updateMapBySheetId)="setupMap($event)"
-            (blurGraph)="showCreateMapPopup = $event"
+            (blurGraph)="blurCanvas()"
     ></app-graph-info>
-<div #canvas (mousemove)="onMousemove($event)" [ngClass]="showCreateMapPopup? 'blur':''"
+<div #canvas (mousemove)="onMousemove($event)" [ngClass]="showPopup? 'blur':''"
     style="width: 100%; height:100vh;">
 </div>

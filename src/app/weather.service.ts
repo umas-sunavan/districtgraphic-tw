@@ -6080,6 +6080,10 @@ export class WeatherService {
     }))
   }
 
+  getAllMapsFromFirebase = ():Observable<MapInfoInFirebase[]> => {
+    return <Observable<MapInfoInFirebase[]>>this.db.list('maps').valueChanges()
+  }
+
   convertWeatherApiToDistrictGraphData = map((next: WeatherData): DistrictGraphData[] => {
     return next.records.location.map(station => {
       const rainValue = this.findWeatherValue(station, 'H_24R')

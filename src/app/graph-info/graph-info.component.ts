@@ -1,7 +1,7 @@
 import { Component, Input, OnInit, Output, ViewChild, EventEmitter, AfterViewInit } from '@angular/core';
 import { AngularFireDatabase } from '@angular/fire/database';
 import { FormControl, FormGroup } from '@angular/forms';
-import { DistrictMeshData } from '../interfaces';
+import { DistrictMeshData, MapInfoInFirebase } from '../interfaces';
 import { WeatherService } from '../weather.service';
 import { Router, ActivatedRoute, ParamMap } from '@angular/router';
 
@@ -16,6 +16,7 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
   showLinkPopup: boolean = false
   shareLink: string = ''
   showCreateMapPopup: boolean = false
+  showBrowseMapsPopup: boolean = false
   mapName: string = '台灣天氣資訊地圖'
   author: string = '伍瑪斯'
   heightDimensionTitle: string = '今日降雨量'
@@ -28,6 +29,7 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
     { gradientStart: '94F9C8', gradientEnd: '89BBFF' },
   ]
   gradientSelectedIndex: number = 0
+  allMaps:MapInfoInFirebase[] = []
   constructor(
     public weatherService: WeatherService,
     private router: Router,
@@ -58,6 +60,28 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
   ngAfterViewInit() {
     // const mapId = this.weatherService.getMapIdFromUrl()
     // console.log(mapId);
+  }
+
+  openBrowseMaps = (btn: any) => {
+    this.blurGraph.emit(true)
+    this.showBrowseMapsPopup = !this.showBrowseMapsPopup;
+    btn.blur()
+    this.weatherService.getAllMapsFromFirebase().subscribe( maps => {
+      this.allMaps = maps.map( map => {
+        map.createDate = new Date(map.createDate)
+        console.log(map.createDate);
+        
+        return map
+      })
+    })
+  }
+
+
+  clickMapLink = (mapId:string) => {
+    this.router.navigate(['/maps', mapId]);
+    this.updateMapBySheetId.emit(mapId)
+    this.blurGraph.emit(false)
+    this.showBrowseMapsPopup = !this.showBrowseMapsPopup;
   }
 
   openCreateProcess = (btn: any) => {

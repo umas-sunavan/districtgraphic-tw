@@ -1,14 +1,11 @@
 import { AfterViewInit, Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
 import gsap, { Power1 } from 'gsap';
-import { BackSide, BoxGeometry, CameraHelper, Color, CylinderGeometry, DirectionalLight, DirectionalLightHelper, Font, FontLoader, FrontSide, Group, HemisphereLight, HemisphereLightHelper, IcosahedronBufferGeometry, Intersection, IUniform, Light, LightShadow, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshPhongMaterial, MeshStandardMaterial, Object3D, PerspectiveCamera, PointLight, PointLightHelper, Raycaster, Scene, Shader, ShaderMaterial, SphereGeometry, SpotLight, SpotLightHelper, TextGeometry, Vector3, WebGLRenderer } from 'three';
+import { BoxGeometry, CameraHelper, Color, CylinderGeometry, DirectionalLight, DirectionalLightHelper, Font, FontLoader, FrontSide, Group, HemisphereLight, HemisphereLightHelper, IcosahedronBufferGeometry, Intersection, IUniform, Light, LightShadow, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshPhongMaterial, MeshStandardMaterial, Object3D, PerspectiveCamera, PointLight, PointLightHelper, Raycaster, Scene, Shader, ShaderMaterial, SphereGeometry, SpotLight, SpotLightHelper, TextGeometry, Vector3, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { WeatherService } from '../weather.service';
 import { DistrictGraphData, DistrictMeshData, MapInfoInFirebase } from '../interfaces';
-import { Form, FormControl, FormGroup, NgForm } from '@angular/forms';
-import { map, switchMap, tap } from 'rxjs/operators';
 import { AngularFireDatabase, AngularFireList } from '@angular/fire/database';
-import { Observable, of } from 'rxjs';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 
 @Component({
@@ -39,7 +36,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   box: Object3D
   box2: Object3D
   mapGltf?: GLTF
-  showCreateMapPopup: boolean = false;
+  showPopup: boolean = false;
   ToneColor: { maxHex: string, minHex: string } = { maxHex: 'EEF588', minHex: '70a7f3' }
   units: {tone: string, height:string } = {tone: '降雨量', height:'溫' }
 
@@ -76,6 +73,11 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
+  }
+
+  blurCanvas = () => {
+    this.showPopup = !this.showPopup
+    this.animate()
   }
 
   ngAfterViewInit() {
@@ -601,9 +603,9 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   animate = () => {
-    // if (this.renderer.info.render.frame < 90) {
+    if (!this.showPopup) {
       requestAnimationFrame(this.animate);
-    // }
-    this.renderer.render(this.scene, this.camera);
+      this.renderer.render(this.scene, this.camera);
+    }  
   };
 }
