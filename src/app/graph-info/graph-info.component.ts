@@ -108,8 +108,8 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
     this.showLinkPopup = !this.showLinkPopup
     this.mapName = mapAttribute.mapTitle
     this.author = mapAttribute.authorName
-    console.log(mapAttribute, mapAttribute.requireHeightDimension, mapAttribute.requireToneDimension);
-    
+    if (mapAttribute.heightTitle) mapAttribute.heightTitle = ''
+    if (mapAttribute.toneTitle) mapAttribute.toneTitle = ''
     const pushedMapRef = this.weatherService.pushMapToFirebase(mapAttribute, toneGradient, mapSource)
     if (pushedMapRef.key) {
       const mapId: string = pushedMapRef.key
