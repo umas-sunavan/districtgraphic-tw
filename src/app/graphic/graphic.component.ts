@@ -543,12 +543,9 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
 
       this.orbitcontrols.addEventListener('change', () => {
-        this.faceCamera([
-          ...maxToneMeshGroup.children,
-          ...minToneMeshGroup.children,
-          ...maxHeightMeshGroup.children,
-          // minHeightMeshGroup,
-        ])
+        if (maxToneMeshGroup) { maxToneMeshGroup.children.forEach(child => child.lookAt(this.camera.position)) }
+        if (minToneMeshGroup) { minToneMeshGroup.children.forEach(child => child.lookAt(this.camera.position)) }
+        if (maxHeightMeshGroup) { maxHeightMeshGroup.children.forEach(child => child.lookAt(this.camera.position)) }
       })
     }))
   }
@@ -622,10 +619,10 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
   animate = () => {
     // if (this.renderer.info.render.frame < 90) {
-      if (!this.showPopup) {
-        requestAnimationFrame(this.animate);
-        this.renderer.render(this.scene, this.camera);
-      }
+    if (!this.showPopup) {
+      requestAnimationFrame(this.animate);
+      this.renderer.render(this.scene, this.camera);
+    }
     // }
   };
 }
