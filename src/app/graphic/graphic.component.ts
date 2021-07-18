@@ -37,8 +37,9 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   box2: Object3D
   mapGltf?: GLTF
   showPopup: boolean = false;
-  ToneColor: { maxHex: string, minHex: string } = { maxHex: 'EEF588', minHex: '70a7f3' }
-  units: {tone: string, height:string } = {tone: '降雨量', height:'溫' }
+  toneColor: { maxHex: string, minHex: string } = { maxHex: 'EEF588', minHex: '70a7f3' }
+  units: { tone: string, height: string } = { tone: '降雨量', height: '溫' }
+  dimensionRequirement: { height: boolean, tone: boolean } = { height: true, tone: true }
 
   dbList: AngularFireList<any>
 
@@ -89,7 +90,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.setUpTaiwan3dModel().then((Taiwan3dModel: GLTF) => {
       this.mapGltf = Taiwan3dModel
       const mapId = this.route.snapshot.paramMap.get('id') || undefined
-      console.log(this.route.snapshot.paramMap.keys, mapId);
       Taiwan3dModel.scene.scale.set(0.1, 0.1, 0.1)
       this.setupMap(mapId)
     })
@@ -337,7 +337,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
   getMaterialColorByRate = (highestTemp: number, lowestTemp: number, currentTemp: number): { r: number, g: number, b: number, } => {
     const colorRate = (currentTemp - highestTemp) / (lowestTemp - highestTemp)
-    const hashColor = this.blendHexColors('#' + this.ToneColor.maxHex, '#' + this.ToneColor.minHex, colorRate)
+    const hashColor = this.blendHexColors('#' + this.toneColor.maxHex, '#' + this.toneColor.minHex, colorRate)
     return this.convertHexTo0to1(hashColor)
   }
 
@@ -379,8 +379,9 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
     if (mapId && mapId !== 'weather') {
       // google sheet 資料
-      this.weatherServer.getMapDataFromFirebase(mapId).subscribe( mapData => {
+      this.weatherServer.getMapDataFromFirebase(mapId).subscribe(mapData => {
         this.setupTone(mapData)
+        this.setupDimensionText(mapData)
         const googleSheetId = this.weatherServer.getGoogleSheetIdFromUrl(mapData.sourceUrl)
         this.weatherServer.getGoogleSheetInfo(googleSheetId).subscribe(graphData => {
           this.generateMap(graphData)
@@ -395,9 +396,14 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     }
   }
 
+  setupDimensionText = (mapInfo: MapInfoInFirebase) => {
+    this.dimensionRequirement.height = mapInfo.requireHeightDimension === "true" ? true : false
+    this.dimensionRequirement.tone = mapInfo.requireToneDimension === "true" ? true : false
+  }
+
   setupTone = (mapInfo: MapInfoInFirebase) => {
-    this.ToneColor.maxHex = mapInfo.MaxToneHex
-    this.ToneColor.minHex = mapInfo.MinToneHex
+    this.toneColor.maxHex = mapInfo.MaxToneHex
+    this.toneColor.minHex = mapInfo.MinToneHex
     this.units.height = mapInfo.HeightDimensionUnit
     this.units.tone = mapInfo.ToneDimensionUnit
   }
@@ -505,24 +511,36 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         this.textsMeshAndColor.forEach(textMesh => textMesh.textMesh.removeFromParent())
         this.textsMeshAndColor = []
       }
-      const maxToneTitleMesh = this.createTextMesh(font, maxToneMesh.mesh3d, maxToneMesh.zhDistrictName, maxToneMesh.rgbColor)
-      const minToneTitleMesh = this.createTextMesh(font, minToneMesh.mesh3d, minToneMesh.zhDistrictName, minToneMesh.rgbColor)
-      const maxHeightTitleMesh = this.createTextMesh(font, maxHeightMesh.mesh3d, maxHeightMesh.zhDistrictName, maxHeightMesh.rgbColor)
-      // const minHeightTitleMesh = this.createTextMesh(font, minHeightMesh.mesh3d, minHeightMesh.zhDistrictName, minHeightMesh.rgbColor)
 
-      const maxToneSubtitleMesh = this.createTextMesh(font, maxToneMesh.mesh3d, `最高${this.units.tone} ${Math.round(+maxToneMesh.tone * 10) / 10}`, maxToneMesh.rgbColor)
-      const minToneSubtitleMesh = this.createTextMesh(font, minToneMesh.mesh3d, `最低${this.units.tone} ${Math.round(+minToneMesh.tone * 10) / 10}`, minToneMesh.rgbColor)
-      const maxHeightSubtitle = this.createTextMesh(font, maxHeightMesh.mesh3d, `最高${this.units.height} ${Math.round(+maxHeightMesh.height * 10) / 10}`, maxHeightMesh.rgbColor)
-      // const minHeightSubtitle = this.createTextMesh(font, minHeightMesh.mesh3d, `最高降雨量 ${Math.round(+minHeightMesh.height * 10) / 10}mm`, minHeightMesh.rgbColor)
+      let maxHeightMeshGroup: Group
+      // let minHeightMeshGroup: Group
+      if (this.dimensionRequirement.height) {
+        const maxHeightTitleMesh = this.createTextMesh(font, maxHeightMesh.mesh3d, maxHeightMesh.zhDistrictName, maxHeightMesh.rgbColor)
+        // const minHeightTitleMesh = this.createTextMesh(font, minHeightMesh.mesh3d, minHeightMesh.zhDistrictName, minHeightMesh.rgbColor)
+        const maxHeightSubtitleMesh = this.createTextMesh(font, maxHeightMesh.mesh3d, `最高${this.units.height} ${Math.round(+maxHeightMesh.height * 10) / 10}`, maxHeightMesh.rgbColor)
+        // const minHeightSubtitleMesh = this.createTextMesh(font, minHeightMesh.mesh3d, `最高降雨量 ${Math.round(+minHeightMesh.height * 10) / 10}mm`, minHeightMesh.rgbColor)
+        maxHeightMeshGroup = this.createTextMeshGroup(maxHeightTitleMesh, maxHeightSubtitleMesh)
+        // minHeightMeshGroup = this.createTextMeshGroup(minHeightTitleMesh, minHeightSubtitleMesh)
+        this.animateText(maxHeightMeshGroup, maxHeightMesh)
+        // this.animateText(minHeightMeshGroup, minHeightMesh)
 
-      const maxToneMeshGroup = this.createTextMeshGroup(maxToneTitleMesh, maxToneSubtitleMesh)
-      const minToneMeshGroup = this.createTextMeshGroup(minToneTitleMesh, minToneSubtitleMesh)
-      const maxHeightMeshGroup = this.createTextMeshGroup(maxHeightTitleMesh, maxHeightSubtitle)
-      // const minHeightMeshGroup = this.createTextMeshGroup(minHeightTitleMesh, minHeightSubtitle)
-      this.animateText(maxToneMeshGroup, maxToneMesh)
-      this.animateText(minToneMeshGroup, minToneMesh)
-      this.animateText(maxHeightMeshGroup, maxHeightMesh)
-      // this.animateText(minHeightMeshGroup, minHeightMesh)
+      }
+
+      let maxToneMeshGroup: Group
+      let minToneMeshGroup: Group
+      if (this.dimensionRequirement.tone) {
+        const maxToneTitleMesh = this.createTextMesh(font, maxToneMesh.mesh3d, maxToneMesh.zhDistrictName, maxToneMesh.rgbColor)
+        const minToneTitleMesh = this.createTextMesh(font, minToneMesh.mesh3d, minToneMesh.zhDistrictName, minToneMesh.rgbColor)
+        const maxToneSubtitleMesh = this.createTextMesh(font, maxToneMesh.mesh3d, `最高${this.units.tone} ${Math.round(+maxToneMesh.tone * 10) / 10}`, maxToneMesh.rgbColor)
+        const minToneSubtitleMesh = this.createTextMesh(font, minToneMesh.mesh3d, `最低${this.units.tone} ${Math.round(+minToneMesh.tone * 10) / 10}`, minToneMesh.rgbColor)
+        maxToneMeshGroup = this.createTextMeshGroup(maxToneTitleMesh, maxToneSubtitleMesh)
+        minToneMeshGroup = this.createTextMeshGroup(minToneTitleMesh, minToneSubtitleMesh)
+        this.animateText(maxToneMeshGroup, maxToneMesh)
+        this.animateText(minToneMeshGroup, minToneMesh)
+      }
+
+
+
 
       this.orbitcontrols.addEventListener('change', () => {
         this.faceCamera([
@@ -603,9 +621,11 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   animate = () => {
-    if (!this.showPopup) {
-      requestAnimationFrame(this.animate);
-      this.renderer.render(this.scene, this.camera);
-    }  
+    // if (this.renderer.info.render.frame < 90) {
+      if (!this.showPopup) {
+        requestAnimationFrame(this.animate);
+        this.renderer.render(this.scene, this.camera);
+      }
+    // }
   };
 }

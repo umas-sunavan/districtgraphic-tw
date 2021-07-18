@@ -16,13 +16,17 @@
         </div>
         <div class="d-flex flex-column pt-4" *ngIf="this.meshDataOnHtml">
             <h3 class="zh font-size-m">{{this.meshDataOnHtml.zhCityName}}</h3>
-            <h3 class="en font-size-m">{{this.meshDataOnHtml.enCityName.split("_").join()}}</h3>
+            <h3 class="en font-size-m">{{this.meshDataOnHtml.enCityName.split("_").join(' ')}}</h3>
         </div>
         <div class="mt-auto mb-auto" *ngIf="this.meshDataOnHtml">
-            <small class="zh font-size-s">{{heightDimensionTitle}}</small>
-            <h3 class="en font-size-l">{{this.meshDataOnHtml.height | number: '1.1-1'}}</h3>
-            <small class="zh font-size-s">{{toneDimensionTitle}}</small>
-            <h3 class="en font-size-l">{{this.meshDataOnHtml.tone | number: '1.1-1'}}</h3>
+            <div [ngClass]="requireHeightDimension ? '' : 'd-none'">
+                <small class="zh font-size-s">{{heightDimensionTitle}}</small>
+                <h3 class="en font-size-l">{{this.meshDataOnHtml.height | number: '1.1-1'}}</h3>
+            </div>
+            <div [ngClass]="requireToneDimension ? '' : 'd-none'">
+                <small class="zh font-size-s">{{toneDimensionTitle}}</small>
+                <h3 class="en font-size-l">{{this.meshDataOnHtml.tone | number: '1.1-1'}}</h3>
+            </div>
         </div>
     </div>
     <div [ngStyle]="{'color': '#666666', display: mouseHoverDetalessMesh && mouseHoveAnyMesh ? 'flex':'none'}"
@@ -113,7 +117,7 @@
                     <input type="url" class="p-2 me-2 " #urlLink="ngModel" #urlLinkNativeTag
                         pattern="https://docs\.google\.com/spreadsheets/d/.+"
                         (keydown.enter)="clickSubmit($event, submitUrlForm)"
-                        placeholder="https://getbootstrap.com/docs/4.0/utilities/flex/" name="urlLink" ngModel required
+                        placeholder="https://docs.google.com/spreadsheets/d/1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q/edit?usp=sharing" name="urlLink" ngModel required
                         pattern="https://docs\.google\.com/spreadsheets/d/.+">
                     <p *ngIf="urlLink.touched" class="text-danger theme-font-s-zh d-invisible">
                         <span *ngIf="urlLink.errors?.required">此為必填</span>
@@ -153,7 +157,7 @@
                 </div>
                 <div class="rounded-theme flex-column d-flex bg-white p-4 pt-3 mb-4 input-container">
                     <p class="theme-font-s-zh ps-2 ">聯絡用電子郵件</p>
-                    <input type="url" class="p-2" placeholder="1234@email.com" name="authorEmail" ngModel required
+                    <input type="url" class="p-2" placeholder="1234@email.com" name="authorEmail" ngModel
                         #emailInput="ngModel" email pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$">
                     <p *ngIf="emailInput.touched" class="text-danger theme-font-s-zh d-invisible">
                         <!-- <span *ngIf="emailInput.errors?.required">此為必填</span> -->
@@ -167,21 +171,41 @@
                     <span class="text-danger theme-font-s-zh d-invisible m-0"
                         *ngIf="mapTitle.touched && mapTitle.errors?.required">此為必填</span>
                 </div>
-                <div class="rounded-theme flex-column d-flex bg-white p-4 pt-3 mb-4 input-container">
-                    <p class="theme-font-s-zh ps-2 ">高度代表何種資料？</p>
-                    <input type="url" class="p-2" placeholder="如：降雨量" name="heightTitle" ngModel #heightTitle="ngModel"
-                        required>
+                <div class="rounded-theme flex-column d-flex bg-white p-4 pt-3 mb-4 ">
+                    <p class="theme-font-s-zh ps-2 ">要用到的資料維度？</p>
+                    <div class="form-check pt-2 p-0 m-0">
+                        <input class="ms-2 border-2 border p-2 form-check-input" type="checkbox" ngModel=true
+                            #requireHeightInput="ngModel" name="requireHeightDimension" id="requireHeightDimension">
+                        <label class="p-1 theme-font-s-zh d-flex form-check-label" for="requireHeightDimension">
+                            高度
+                        </label>
+                    </div>
+                    <div class="form-check pt-2 p-0 m-0">
+                        <input class="ms-2 border-2 border p-2 form-check-input" type="checkbox" ngModel=true
+                            #requireToneInput="ngModel" name="requireToneDimension" id="requireToneDimension">
+                        <label class="p-1 theme-font-s-zh d-flex form-check-label" for="requireToneDimension">
+                            色調
+                        </label>
+                    </div>
                     <span class="text-danger theme-font-s-zh d-invisible m-0"
-                        *ngIf="heightTitle.touched && heightTitle.errors?.required">此為必填</span>
+                        *ngIf="!requireToneInput.value && !requireHeightInput.value">至少要有一個維度</span>
                 </div>
             </div>
             <div class="d-flex flex-column">
+
+                <div class="rounded-theme flex-column d-flex bg-white p-4 pt-3 mb-4 input-container">
+                    <p class="theme-font-s-zh ps-2 ">高度代表何種資料？</p>
+                    <input type="url" class="p-2" placeholder="如：降雨量" name="heightTitle" ngModel #heightTitle="ngModel"
+                        [disabled]="!requireHeightInput.value">
+                    <span class="text-danger theme-font-s-zh d-invisible m-0"
+                        *ngIf="heightTitle.touched && (requireHeightInput.value === 'true' || requireHeightInput.value === true) && heightTitle.value==''">此為必填</span>
+                </div>
                 <div class="rounded-theme flex-column d-flex bg-white p-4 pt-3 mb-4 input-container">
                     <p class="theme-font-s-zh ps-2 ">色調代表何種資料？</p>
                     <input type="url" class="p-2" placeholder="如：溫度" name="toneTitle" ngModel #toneTitle="ngModel"
-                        required>
+                        [disabled]="!requireToneInput.value">
                     <span class="text-danger theme-font-s-zh d-invisible m-0"
-                        *ngIf="toneTitle.touched && toneTitle.errors?.required">此為必填</span>
+                        *ngIf="toneTitle.touched && (requireToneInput.value === 'true' || requireToneInput.value === true) && toneTitle.value==''">此為必填</span>
                 </div>
                 <div class="rounded-theme flex-column d-flex bg-white p-4 pt-3 mb-4">
                     <p class="theme-font-s-zh ps-2 ">挑選地圖色調</p>

@@ -3,7 +3,7 @@ import { HttpClient, HttpHeaders, HttpParams, HttpRequest } from '@angular/commo
 import { Observable, of } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { enZhMapping } from './en-zh-mapping';
-import { EnZhMap, WeatherData, ApiWeatherData, Location as ApiLocation, DistrictWeatherInfo, DistrictGraphData, googleSheetRawData as GoogleSheetRawData, MapInfoInFirebase } from './interfaces';
+import { EnZhMap, WeatherData, ApiWeatherData, Location as ApiLocation, DistrictWeatherInfo, DistrictGraphData, googleSheetRawData as GoogleSheetRawData, MapInfoInFirebase, MapAttributeForm, ToneGradient, MapSource } from './interfaces';
 import { Location } from '@angular/common';
 import { AngularFireDatabase } from '@angular/fire/database';
 import { ActivatedRoute } from '@angular/router';
@@ -30,12 +30,14 @@ export class WeatherService {
   addBaseUrl = (relavieLink: string): string => this.location.prepareExternalUrl(relavieLink)
   getGoogleSheetIdFromUrl = (link: string) => link.replace('https://docs.google.com/spreadsheets', '').split('/')[2] + ''
 
-  pushMapToFirebase = (mapAttribute: { authorName: string, authorEmail: string, mapTitle: string, toneTitle:string, heightTitle:string }, toneGradient:{ gradientStart: string, gradientEnd: string }, mapSource: { urlLink: string, goNextPopup: string }) => {
+  pushMapToFirebase = (mapAttribute: MapAttributeForm, toneGradient:ToneGradient, mapSource: MapSource) => {
+    console.log(mapAttribute);
+    
     return this.db.list('maps').push({
       mapName: mapAttribute.mapTitle,
-      HeightDimensionTitle: mapAttribute.heightTitle,
+      HeightDimensionTitle: mapAttribute.heightTitle + '',
       HeightDimensionUnit: '',
-      ToneDimensionTitle: mapAttribute.toneTitle,
+      ToneDimensionTitle: mapAttribute.toneTitle + '',
       ToneDimensionUnit: '',
       MaxToneHex: toneGradient.gradientEnd,
       MinToneHex: toneGradient.gradientStart,
@@ -44,7 +46,9 @@ export class WeatherService {
       sourceUrl: mapSource.urlLink,
       sourceData: '',
       createDate: new Date().toString(),
-      mapUrl: 'null'
+      mapUrl: 'null',
+      requireHeightDimension: mapAttribute.requireToneDimension + '',
+      requireToneDimension: mapAttribute.requireToneDimension + '',
     })
   }
 

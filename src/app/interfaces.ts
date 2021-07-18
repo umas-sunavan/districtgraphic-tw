@@ -128,4 +128,28 @@ export interface MapInfoInFirebase {
   sourceData: string;
   sourceUrl: string;
   createDate: any;
+  requireHeightDimension:string | null
+  requireToneDimension:string | null
 }
+
+  export interface MapAttributeForm {
+    authorName: string 
+    authorEmail: string 
+    mapTitle: string 
+    toneTitle: string
+    heightTitle: string
+    requireHeightDimension:boolean | string
+    requireToneDimension:boolean | string
+  }  
+  
+  export interface ToneGradient {
+    gradientStart:string
+    gradientEnd: string
+  }
+  
+  export interface MapSource {
+    urlLink:string
+    goNextPopup: string
+  }
+  
+  

@@ -1,7 +1,7 @@
 import { Component, Input, OnInit, Output, ViewChild, EventEmitter, AfterViewInit } from '@angular/core';
 import { AngularFireDatabase } from '@angular/fire/database';
 import { FormControl, FormGroup } from '@angular/forms';
-import { DistrictMeshData, MapInfoInFirebase } from '../interfaces';
+import { DistrictMeshData, MapAttributeForm, MapInfoInFirebase, MapSource, ToneGradient } from '../interfaces';
 import { WeatherService } from '../weather.service';
 import { Router, ActivatedRoute, ParamMap } from '@angular/router';
 
@@ -21,6 +21,8 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
   author: string = '伍瑪斯'
   heightDimensionTitle: string = '今日降雨量'
   toneDimensionTitle: string = '本日最高溫'
+  requireToneDimension: boolean = true
+  requireHeightDimension: boolean = true
   gradientPickers: any[] = [
     { gradientStart: 'F8FF8B', gradientEnd: 'F38461' },
     { gradientStart: 'EEF588', gradientEnd: '70A7F3' },
@@ -29,7 +31,7 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
     { gradientStart: '94F9C8', gradientEnd: '89BBFF' },
   ]
   gradientSelectedIndex: number = 0
-  allMaps:MapInfoInFirebase[] = []
+  allMaps: MapInfoInFirebase[] = []
   constructor(
     public weatherService: WeatherService,
     private router: Router,
@@ -52,32 +54,33 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
           this.mapName = mapData.mapName
           this.heightDimensionTitle = mapData.HeightDimensionTitle
           this.toneDimensionTitle = mapData.ToneDimensionTitle
+          this.requireHeightDimension = mapData.requireHeightDimension === "true" ? true : false
+          this.requireToneDimension = mapData.requireToneDimension === "true" ? true : false
+          console.log(mapData);          
         })
       }
     })
   }
 
   ngAfterViewInit() {
-    // const mapId = this.weatherService.getMapIdFromUrl()
-    // console.log(mapId);
   }
 
   openBrowseMaps = (btn: any) => {
     this.blurGraph.emit(true)
     this.showBrowseMapsPopup = !this.showBrowseMapsPopup;
     btn.blur()
-    this.weatherService.getAllMapsFromFirebase().subscribe( maps => {
-      this.allMaps = maps.map( map => {
+    this.weatherService.getAllMapsFromFirebase().subscribe(maps => {
+      this.allMaps = maps.map(map => {
         map.createDate = new Date(map.createDate)
         console.log(map.createDate);
-        
+
         return map
       })
     })
   }
 
 
-  clickMapLink = (mapId:string) => {
+  clickMapLink = (mapId: string) => {
     this.router.navigate(['/maps', mapId]);
     this.updateMapBySheetId.emit(mapId)
     this.blurGraph.emit(false)
@@ -100,12 +103,13 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
     submitBtn.click()
   }
 
-  submitEditingMap = (mapAttribute: { authorName: string, authorEmail: string, mapTitle: string, toneTitle: string, heightTitle: string }, toneGradient: { gradientStart: string, gradientEnd: string }, mapSource: { urlLink: string, goNextPopup: string }) => {
+  submitEditingMap = (mapAttribute: MapAttributeForm, toneGradient: ToneGradient, mapSource: MapSource) => {
     this.showEditMapPopup = !this.showEditMapPopup
     this.showLinkPopup = !this.showLinkPopup
     this.mapName = mapAttribute.mapTitle
     this.author = mapAttribute.authorName
-
+    console.log(mapAttribute);
+    
     const pushedMapRef = this.weatherService.pushMapToFirebase(mapAttribute, toneGradient, mapSource)
     if (pushedMapRef.key) {
       const mapId: string = pushedMapRef.key

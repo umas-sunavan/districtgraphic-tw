@@ -89,3 +89,8 @@ a {
   border-radius: 6px;
   border: 2px solid #0088DC;
 }
+
+input.form-check-input:checked {
+    background-color: #0088DC;
+    opacity: 69%;
+}
