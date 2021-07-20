@@ -106,7 +106,7 @@
             <div class="mb-4 step-1 d-flex flex-column">
                 <!-- <p class="text-center theme-font-s-zh mb-2">1. 複製這個表單</p> -->
                 <div class="text-center w-100 d-flex rounded-theme btn-primary btn-primary my-auto">
-                    <a href="https://docs.google.com/spreadsheets/d/1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q/edit?usp=sharing"
+                    <a href="https://docs.google.com/spreadsheets/d/1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q/copy"
                         target="_blank" class="justify-content-center d-flex align-items-center w-100 text-white p-2">
                         第一步：複製這個表單
                         <svg width="18" height="18" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -122,6 +122,7 @@
                 </div>
             </div>
             <div class="mb-4 d-flex flex-column">
+                <p class="theme-font-s-zh mb-2">第二步：填上你的資料，並取得表單的公開超連結</p>
                 <div class="d-flex ">
                     <img class="flex-grow-1 rounded-theme bg-white p-2" [src]="weatherService.addBaseUrl('/assets/imgs/step-2.gif')"
                     [srcset]="
@@ -130,10 +131,9 @@
                 weatherService.addBaseUrl('/assets/imgs/step-2@3x.gif 3x') + ', '"
                     >
                 </div>
-                <p class="theme-font-s-zh mb-2">第二步：填上你的資料，並取得表單的公開超連結</p>
-
             </div>
             <div class="w-100" class="d-flex flex-column">
+                <p class="theme-font-s-zh mb-2">第三步：貼上表單的公開超連結</p>
                 <div class="rounded-theme d-flex bg-white px-4 pt-4 input-container">
                     <div class="d-flex flex-column flex-grow-1">
                         <input type="url" class="p-2 me-2 " #urlLink="ngModel" #urlLinkNativeTag
@@ -149,7 +149,6 @@
                     <input type="submit" [disabled]="!urlForm.valid" #submitUrlForm
                         class="rounded-theme btn-primary py-2 mb-4 px-4" name="goNextPopup" ngModel="製作地圖">
                 </div>
-                <p class="theme-font-s-zh mb-2">第三步：貼上表單的公開超連結</p>
             </div>
         </div>
 
@@ -159,7 +158,6 @@
 <div class="h-100 w-100 position-fixed popup-bg min-height-70" [ngClass]="showEditMapPopup? 'd-flex':'d-none'">
     <form #editMapForm="ngForm" class="rounded-theme popup m-auto d-flex flex-column"
         (ngSubmit)="submitEditingMap(editMapForm.value,gradientPickers[gradientSelectedIndex],  urlForm.value)">
-        {{gradientPickers[gradientSelectedIndex] | json}}
         <div class="pb-4 d-flex justify-content-between align-items-center">
             <h1 class="zh font-size-m m-0aawsertyuuz theme-font">編輯地圖</h1>
             <button class="btn bg-transparent border-0"
@@ -250,7 +248,7 @@
                 </div>
                 <input type="submit"
                     [disabled]="!editMapForm.valid || (requireHeightInput.value && heightTitle.value=='') || (requireToneInput.value && toneTitle.value=='')"
-                    class="rounded-theme btn-primary px-4 py-2 btn-primary" name="uploadBtn" ngModel="建立地圖">
+                    class="w-100 rounded-theme btn-primary px-4 py-2 btn-primary" name="uploadBtn" ngModel="建立地圖">
             </div>
         </div>
     </form>
