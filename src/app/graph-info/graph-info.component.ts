@@ -23,12 +23,15 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
   toneDimensionTitle: string = '本日最高溫'
   requireToneDimension: boolean = true
   requireHeightDimension: boolean = true
-  gradientPickers: any[] = [
-    { gradientStart: 'F8FF8B', gradientEnd: 'F38461' },
-    { gradientStart: 'EEF588', gradientEnd: '70A7F3' },
-    { gradientStart: 'FFB9D2', gradientEnd: '88B4EF' },
-    { gradientStart: 'BF4A4A', gradientEnd: 'DC7EC7' },
-    { gradientStart: '94F9C8', gradientEnd: '89BBFF' },
+  mapDescription: string = "經由Opendata抓出來的API資料"
+  sourceUrl: string = "https://docs.google.com/spreadsheets/d/1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q/edit?usp=sharing"
+  toneGradient: ToneGradient = { startColor: '70a7f3', endColor: 'EEF588' };
+  gradientPickers: ToneGradient[] = [
+    { startColor: 'F8FF8B', endColor: 'F38461' },
+    { startColor: 'EEF588', endColor: '70A7F3' },
+    { startColor: 'FFB9D2', endColor: '88B4EF' },
+    { startColor: 'BF4A4A', endColor: 'DC7EC7' },
+    { startColor: '94F9C8', endColor: '89BBFF' },
   ]
   gradientSelectedIndex: number = 0
   allMaps: MapInfoInFirebase[] = []
@@ -41,6 +44,8 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
   @Input('mouseHoverDetalessMesh') mouseHoverDetalessMesh: boolean = false
   @Input('mouseHoveAnyMesh') mouseHoveAnyMesh: boolean = false
   @Input('meshDataOnHtml') meshDataOnHtml?: DistrictMeshData;
+  @Input('toneExtremum') toneExtremum: { max: number, min: number} = { max: 0, min: 0}
+  
   @Output() updateMapBySheetId = new EventEmitter<string>()
   @Output() blurGraph = new EventEmitter<boolean>()
 
@@ -56,7 +61,10 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
           this.toneDimensionTitle = mapData.ToneDimensionTitle
           this.requireHeightDimension = mapData.requireHeightDimension === "true" ? true : false
           this.requireToneDimension = mapData.requireToneDimension === "true" ? true : false
-          console.log(mapData);          
+          this.mapDescription = mapData.mapDescription
+          this.sourceUrl = mapData.sourceUrl
+          this.toneGradient = { startColor: mapData.MinToneHex, endColor: mapData.MaxToneHex}
+          console.log(mapData);
         })
       }
     })
@@ -108,8 +116,10 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
     this.showLinkPopup = !this.showLinkPopup
     this.mapName = mapAttribute.mapTitle
     this.author = mapAttribute.authorName
-    if (mapAttribute.heightTitle) mapAttribute.heightTitle = ''
-    if (mapAttribute.toneTitle) mapAttribute.toneTitle = ''
+    console.log(mapAttribute);
+    // add them in case they are not exist in the form due to the "disable" directive
+    if (!mapAttribute.heightTitle) mapAttribute.heightTitle = ''
+    if (!mapAttribute.toneTitle) mapAttribute.toneTitle = ''
     const pushedMapRef = this.weatherService.pushMapToFirebase(mapAttribute, toneGradient, mapSource)
     if (pushedMapRef.key) {
       const mapId: string = pushedMapRef.key

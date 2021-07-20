@@ -40,7 +40,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   toneColor: { maxHex: string, minHex: string } = { maxHex: 'EEF588', minHex: '70a7f3' }
   units: { tone: string, height: string } = { tone: '降雨量', height: '溫' }
   dimensionRequirement: { height: boolean, tone: boolean } = { height: true, tone: true }
-
+  toneExtremum: { max: number, min: number } = { max: 0, min: 0 }
   dbList: AngularFireList<any>
 
   constructor(
@@ -415,6 +415,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     // gltf.scene.position.set(0, 0, this.move)
     // this.move++
     this.setupMeshData(graphData)
+    this.toneExtremum = this.getToneExtremum(this.meshesData)
     this.setupMapMesh(gltf.scene)
     this.setupAndAnimateTexts()
     this.animateDistrictsHeight()
@@ -474,6 +475,11 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     } else {
       throw new Error("can't traverse to get mesh info");
     }
+  }
+
+  getToneExtremum = (meshesData: DistrictMeshData[]): { max: number, min: number } => {
+    const sortedMesh = meshesData.sort((a, b) => +b.tone - +a.tone)
+    return { max: sortedMesh[0].tone , min: sortedMesh[sortedMesh.length - 1].tone}
   }
 
   getExtremumMesh = (extremumType: string, dimension: string, meshesData: DistrictMeshData[]): DistrictMeshData => {
@@ -618,11 +624,11 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   animate = () => {
-    // if (this.renderer.info.render.frame < 90) {
-    if (!this.showPopup) {
-      requestAnimationFrame(this.animate);
-      this.renderer.render(this.scene, this.camera);
+    if (this.renderer.info.render.frame < 90) {
+      if (!this.showPopup) {
+        requestAnimationFrame(this.animate);
+        this.renderer.render(this.scene, this.camera);
+      }
     }
-    // }
   };
 }

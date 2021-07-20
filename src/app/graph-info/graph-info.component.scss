@@ -2,11 +2,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans&family=Quicksand:wght@300&display=swap');
 
 .intercation-area {
-  position: absolute;
-  padding: 5vh 0px 0px 10%;
-  display: flex;
-  height: 95vh;
-  flex-direction: column;
+  padding: 5vh 5% 5vh 5%;
+  height: 100vh;
   pointer-events: none;
   z-index: 1;
 
@@ -80,12 +77,19 @@
   }
 }
 
-div.gradient-picker {
+form.gradient-picker {
     width: 30px;
     height: auto;
     border-radius: 10em;
     border: solid white 5px;
     background-image: linear-gradient(to top, #70a7f3, #EEF588);
+}
+
+.legend.gradient-picker {
+  width: 40%;
+  height: 5px;
+  border-radius: 10em;
+  background-image: linear-gradient(to right, rgb(248, 255, 139), rgb(243, 132, 97));
 }
 
 .min-height-70 {
@@ -95,4 +99,20 @@ div.gradient-picker {
 .list-container {
     height: 70vh;
     overflow: auto;
+}
+
+textarea {
+  border: none;
+  border-bottom: solid 2px rgba(0, 136, 220, 0.68);
+}
+
+textarea::placeholder {
+  color: #0088dc36;
+}
+
+.map-description {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  display: flex;
+  max-width: 70%;
 }

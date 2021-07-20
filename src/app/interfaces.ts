@@ -130,6 +130,7 @@ export interface MapInfoInFirebase {
   createDate: any;
   requireHeightDimension:string | null
   requireToneDimension:string | null
+  mapDescription:string
 }
 
   export interface MapAttributeForm {
@@ -140,11 +141,12 @@ export interface MapInfoInFirebase {
     heightTitle: string
     requireHeightDimension:boolean | string
     requireToneDimension:boolean | string
+    mapDescriptionInput:string
   }  
   
   export interface ToneGradient {
-    gradientStart:string
-    gradientEnd: string
+    startColor:string
+    endColor: string
   }
   
   export interface MapSource {
