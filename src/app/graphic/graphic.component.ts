@@ -488,10 +488,9 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   getSumHeight = (meshesData: DistrictMeshData[]): number => {
-    return meshesData.reduce( (accumilate,current) => {
-      accumilate.height += current.height      
-      return accumilate
-    }).height    
+    let sum = 0
+    meshesData.forEach(mesh => sum += mesh.height)
+    return sum
   }
 
   getExtremumMesh = (extremumType: string, dimension: string, meshesData: DistrictMeshData[]): DistrictMeshData => {
