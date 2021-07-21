@@ -6,6 +6,7 @@
             (updateMapBySheetId)="setupMap($event)"
             (blurGraph)="blurCanvas()"
             [toneExtremum]="toneExtremum"
+            [sumHeight]="sumHeight"
     ></app-graph-info>
 <div #canvas (mousemove)="onMousemove($event)" [ngClass]="showPopup? 'blur':''"
     style="width: 100%; height:100vh;">

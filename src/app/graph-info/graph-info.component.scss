@@ -52,8 +52,8 @@
   }
 
   img {
-    width: 11rem;
-    mix-blend-mode: luminosity;
+    // width: 11rem;
+    // mix-blend-mode: luminosity;
   }
 
   .share-link {
@@ -77,15 +77,14 @@
   }
 }
 
-form.gradient-picker {
-    width: 30px;
+.map-list div.tone-gradient {
+    width: 5px;
     height: auto;
     border-radius: 10em;
-    border: solid white 5px;
     background-image: linear-gradient(to top, #70a7f3, #EEF588);
 }
 
-.legend.gradient-picker {
+.legend.tone-gradient {
   width: 40%;
   height: 5px;
   border-radius: 10em;
@@ -116,3 +115,9 @@ textarea::placeholder {
   display: flex;
   max-width: 70%;
 }
+
+img {
+  max-height: 35vh;
+    // mix-blend-mode: luminosity;
+}
+

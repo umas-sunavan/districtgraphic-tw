@@ -7,6 +7,7 @@ import { WeatherService } from '../weather.service';
 import { DistrictGraphData, DistrictMeshData, MapInfoInFirebase } from '../interfaces';
 import { AngularFireDatabase, AngularFireList } from '@angular/fire/database';
 import { ActivatedRoute, ParamMap } from '@angular/router';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-graphic',
@@ -38,10 +39,11 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   mapGltf?: GLTF
   showPopup: boolean = false;
   toneColor: { maxHex: string, minHex: string } = { maxHex: 'EEF588', minHex: '70a7f3' }
-  units: { tone: string, height: string } = { tone: '降雨量', height: '溫' }
+  units: { tone: string, height: string } = { tone: '溫', height: '降雨量' }
   dimensionRequirement: { height: boolean, tone: boolean } = { height: true, tone: true }
   toneExtremum: { max: number, min: number } = { max: 0, min: 0 }
   dbList: AngularFireList<any>
+  sumHeight: number
 
   constructor(
     private weatherServer: WeatherService,
@@ -71,6 +73,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.box = new Mesh()
     this.box2 = new Mesh()
     this.light = new PointLight()
+    this.sumHeight = 0
   }
 
   ngOnInit(): void {
@@ -306,7 +309,8 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         meshData.enDistrictName = mapMeshGraph.enDistrict
         return meshData
       } else {
-        console.log(meshData);
+        console.error(meshData);
+        alert(`匯入表單資料時，找不到這個鄉鎮市區在3D模型上對應的物件：${meshData.zhCityName}${meshData.zhDistrictName}`)
         throw new Error("A Mesh Has No English Name");
       }
     })
@@ -416,6 +420,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     // this.move++
     this.setupMeshData(graphData)
     this.toneExtremum = this.getToneExtremum(this.meshesData)
+    this.sumHeight = this.getSumHeight(this.meshesData)
     this.setupMapMesh(gltf.scene)
     this.setupAndAnimateTexts()
     this.animateDistrictsHeight()
@@ -479,7 +484,14 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
   getToneExtremum = (meshesData: DistrictMeshData[]): { max: number, min: number } => {
     const sortedMesh = meshesData.sort((a, b) => +b.tone - +a.tone)
-    return { max: sortedMesh[0].tone , min: sortedMesh[sortedMesh.length - 1].tone}
+    return { max: sortedMesh[0].tone, min: sortedMesh[sortedMesh.length - 1].tone }
+  }
+
+  getSumHeight = (meshesData: DistrictMeshData[]): number => {
+    return meshesData.reduce( (accumilate,current) => {
+      accumilate.height += current.height      
+      return accumilate
+    }).height    
   }
 
   getExtremumMesh = (extremumType: string, dimension: string, meshesData: DistrictMeshData[]): DistrictMeshData => {
@@ -624,11 +636,18 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   animate = () => {
-    // if (this.renderer.info.render.frame < 90) {
+    if (environment.isRenderCountLimited) {
+      if (this.renderer.info.render.frame < 90) {
+        if (!this.showPopup) {
+          requestAnimationFrame(this.animate);
+          this.renderer.render(this.scene, this.camera);
+        }
+      }
+    } else {
       if (!this.showPopup) {
         requestAnimationFrame(this.animate);
         this.renderer.render(this.scene, this.camera);
       }
-    // }
+    }
   };
 }

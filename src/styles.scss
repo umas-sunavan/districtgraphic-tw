@@ -96,3 +96,16 @@ input.form-check-input:checked {
 .vh-70 {
   height: 70vh;
 }
+
+img {
+  width: 100%;
+    // mix-blend-mode: luminosity;
+}
+
+// Medium devices (tablets, 768px and up)
+@media (min-width: 768px) { 
+  img {
+    width: auto;
+      // mix-blend-mode: luminosity;
+  }
+}

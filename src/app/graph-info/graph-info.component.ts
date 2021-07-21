@@ -26,6 +26,7 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
   mapDescription: string = "經由Opendata抓出來的API資料"
   sourceUrl: string = "https://docs.google.com/spreadsheets/d/1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q/edit?usp=sharing"
   toneGradient: ToneGradient = { startColor: '70a7f3', endColor: 'EEF588' };
+  isWeatherMap: boolean = true
   gradientPickers: ToneGradient[] = [
     { startColor: 'F8FF8B', endColor: 'F38461' },
     { startColor: 'EEF588', endColor: '70A7F3' },
@@ -45,7 +46,8 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
   @Input('mouseHoveAnyMesh') mouseHoveAnyMesh: boolean = false
   @Input('meshDataOnHtml') meshDataOnHtml?: DistrictMeshData;
   @Input('toneExtremum') toneExtremum: { max: number, min: number} = { max: 0, min: 0}
-  
+  @Input('sumHeight') sumHeight: number = 0
+
   @Output() updateMapBySheetId = new EventEmitter<string>()
   @Output() blurGraph = new EventEmitter<boolean>()
 
@@ -64,6 +66,7 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
           this.mapDescription = mapData.mapDescription
           this.sourceUrl = mapData.sourceUrl
           this.toneGradient = { startColor: mapData.MinToneHex, endColor: mapData.MaxToneHex}
+          this.isWeatherMap = false
           console.log(mapData);
         })
       }

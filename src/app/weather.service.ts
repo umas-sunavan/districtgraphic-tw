@@ -3,7 +3,7 @@ import { HttpClient, HttpHeaders, HttpParams, HttpRequest } from '@angular/commo
 import { Observable, of } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { enZhMapping } from './en-zh-mapping';
-import { EnZhMap, WeatherData, ApiWeatherData, Location as ApiLocation, DistrictWeatherInfo, DistrictGraphData, googleSheetRawData as GoogleSheetRawData, MapInfoInFirebase, MapAttributeForm, ToneGradient, MapSource } from './interfaces';
+import { EnZhMap, WeatherData, ApiWeatherData, Location as ApiLocation, DistrictWeatherInfo, DistrictGraphData, googleSheetRawData as GoogleSheetRawData, MapInfoInFirebase, MapAttributeForm, ToneGradient, MapSource, meshText } from './interfaces';
 import { Location } from '@angular/common';
 import { AngularFireDatabase } from '@angular/fire/database';
 import { ActivatedRoute } from '@angular/router';
@@ -25,14 +25,14 @@ export class WeatherService {
 
   // names we can find in the 3D model
   districtsEnZhMap: EnZhMap[] = enZhMapping
-  googleSheetId:string = ''
+  googleSheetId: string = ''
 
   addBaseUrl = (relavieLink: string): string => this.location.prepareExternalUrl(relavieLink)
   getGoogleSheetIdFromUrl = (link: string) => link.replace('https://docs.google.com/spreadsheets', '').split('/')[2] + ''
 
-  pushMapToFirebase = (mapAttribute: MapAttributeForm, toneGradient:ToneGradient, mapSource: MapSource) => {
+  pushMapToFirebase = (mapAttribute: MapAttributeForm, toneGradient: ToneGradient, mapSource: MapSource) => {
     console.log(mapAttribute, mapAttribute.requireHeightDimension, mapAttribute.requireToneDimension);
-    
+
     return this.db.list('maps').push({
       mapName: mapAttribute.mapTitle,
       mapDescription: mapAttribute.mapDescriptionInput,
@@ -53,7 +53,7 @@ export class WeatherService {
     })
   }
 
-  setMapRefAsUrlToFirebase = (MapRef:any, url:string) => {
+  setMapRefAsUrlToFirebase = (MapRef: any, url: string) => {
     MapRef.child('mapUrl').set(url, () => {
       console.log('window.location.origin, window.location', window.location.origin, window.location, this.addBaseUrl(''));
     })
@@ -6079,13 +6079,13 @@ export class WeatherService {
     )
   }
 
-  getMapDataFromFirebase = (mapId:string):Observable<MapInfoInFirebase> => {
-    return this.db.list('maps').valueChanges().pipe( map( (mapsInfo:any[]):MapInfoInFirebase => {
+  getMapDataFromFirebase = (mapId: string): Observable<MapInfoInFirebase> => {
+    return this.db.list('maps').valueChanges().pipe(map((mapsInfo: any[]): MapInfoInFirebase => {
       return (<MapInfoInFirebase[]>mapsInfo).filter(map => map.mapUrl === mapId)[0]
     }))
   }
 
-  getAllMapsFromFirebase = ():Observable<MapInfoInFirebase[]> => {
+  getAllMapsFromFirebase = (): Observable<MapInfoInFirebase[]> => {
     return <Observable<MapInfoInFirebase[]>>this.db.list('maps').valueChanges()
   }
 
@@ -6117,14 +6117,114 @@ export class WeatherService {
     // const toneColumnIndex = firstRow.findIndex(cell => cell.v === "色調")
     // const timelineColumnIndex = firstRow.findIndex(cell => cell.v === "時間軸")
     const districtsGraphData: DistrictGraphData[] = raw.table.rows
-      .filter((row, index) => index !== 0)
-      .map(row => {
+      .filter((row, index) => row.c[0].v !== '縣市')
+      .map((row, index) => {
+        let cityName = ""
+        let districtName = ""
+        let height = 0
+        let tone = 0
+        let meshText: meshText = {
+          title: "",
+          subtitle: "",
+          description: "",
+        }
+        if (row.c) {
+
+          if (row.c[0]) {
+            if (row.c[0].v && row.c[0].v !== '#N/A') {
+              cityName = row.c[0].v
+              cityName = cityName.replace("台","臺")
+              if (cityName === "桃園縣") {
+                cityName = "桃園市"
+                console.warn(`桃園縣已升格為直轄市，故修改為桃園市`);
+              }
+              if (cityName === "臺北縣") {
+                cityName = "新北市"
+                console.warn(`臺北縣已升格為直轄市，故修改為新北市`);
+              }
+            } else {
+              alert(`匯入表單時，發現第${index + 1}行的縣市名稱出現錯誤！`)
+            }
+          } else {
+            alert(`匯入表單時，發現第${index + 1}行的縣市名稱出現錯誤！請確定有填上值`)
+          }
+
+          if (row.c[1]) {
+            if (row.c[0].v && row.c[0].v !== '#N/A') {
+              districtName = row.c[1].v
+              districtName = districtName.replace("台","臺")
+              if (districtName === "頭份鎮") {
+                districtName = "頭份市"
+                console.warn(`桃園縣已升格為直轄市，故修改為桃園市`);
+              }
+              if (districtName === "員林鎮") {
+                districtName = "頭份市"
+                console.warn(`桃園縣已升格為直轄市，故修改為桃園市`);
+              }
+              if (districtName.includes("東沙")) {
+                alert(`匯入表單時，發現有東沙環礁，目前不支援東沙環礁的資料呈現，請在Google表單請移除該筆資料`)
+              }
+              if (districtName === "南沙") {
+                alert(`匯入表單時，發現有南沙環礁，目前不支援東沙環礁的資料呈現，請在Google表單請移除該筆資料`)
+              }
+            } else {
+              alert(`匯入表單時，發現第${index + 1}行的鄉鎮市區名稱出現錯誤！`)
+            }
+          } else {
+            alert(`匯入表單時，發現第${index + 1}行的鄉鎮市區名稱出現錯誤！請確定有填上值`)
+          }
+
+
+          if (row.c[2]) {
+            if (row.c[2].v) {
+              if (isNaN(parseFloat(row.c[2].v))) {
+                height = -99
+                alert(`匯入表單時發現${row.c[0].v}${row.c[1].v}的高度資料不是數字`)
+              } else {
+                height = +row.c[2].v
+              }
+            } else {
+              alert(`匯入表單時，發現第${index + 1}行的高度資料出現錯誤！`)
+            }
+          } else {
+            alert(`匯入表單時，發現第${index + 1}行的高度資料出現錯誤！請確定有填上值`)
+          }
+
+
+          if (row.c[3]) {
+            if (row.c[3].v) {
+              if (isNaN(parseFloat(row.c[3].v))) {
+                tone = -99
+                alert(`匯入表單時發現${row.c[0].v}${row.c[1].v}的色調資料不是數字`)
+              } else {
+                tone = +row.c[3].v
+              }
+            } else {
+              alert(`匯入表單時，發現第${index+1}行的色調資料出現錯誤！`)
+            }
+          } else {
+            alert(`匯入表單時，發現第${index+1}行的色調資料出現錯誤！請確定有填上值`)
+          }
+
+
+          if (row.c[4]) {
+            if (row.c[4].v) {
+              // meshText = row.c[4].v
+            } else {
+              alert(`匯入表單時，發現第${index}行的縣市名稱出現錯誤！`)
+            }
+          } else {
+            alert(`匯入表單時，發現第${index}行的縣市名稱出現錯誤！請確定有填上值`)
+          }
+        } else {
+          alert(`匯入表單時，發現第${index}行出現錯誤！`)
+        }
         return {
-          cityName: row.c[0].v,
-          districtName: row.c[1].v,
-          height: +row.c[2].v,
-          tone: +row.c[3].v,
-          meshText: undefined
+          cityName,
+          districtName,
+          height,
+          tone,
+          meshText,
         }
       })
     console.log(districtsGraphData);

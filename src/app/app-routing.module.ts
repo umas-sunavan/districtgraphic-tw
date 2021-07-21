@@ -5,9 +5,8 @@ import { GraphicComponent } from './graphic/graphic.component';
 const routes: Routes = [
   { path: '',   redirectTo: 'maps/weather', pathMatch: 'full' },
   { path: 'maps/:id', component: GraphicComponent },
-  { path: 'maps/**', component: GraphicComponent },
   { path: '**', component: GraphicComponent },
-];;
+];
 
 @NgModule({
   imports: [RouterModule.forRoot(
