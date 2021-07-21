@@ -1,5 +1,6 @@
 export const environment = {
   production: true,
+  isRenderCountLimited: false,
   firebase: {
     apiKey: 'AIzaSyChT9tx82H7b5j1DLIX_COmuddY7e4BEys',
     authDomain: 'districtgraphic-tw-c9fd8.firebaseapp.com',
