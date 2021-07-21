@@ -37,9 +37,9 @@ export class WeatherService {
       mapName: mapAttribute.mapTitle,
       mapDescription: mapAttribute.mapDescriptionInput,
       HeightDimensionTitle: mapAttribute.heightTitle,
-      HeightDimensionUnit: '',
+      HeightDimensionUnit: mapAttribute.heightUnit,
       ToneDimensionTitle: mapAttribute.toneTitle,
-      ToneDimensionUnit: '',
+      ToneDimensionUnit: mapAttribute.toneUnit,
       MaxToneHex: toneGradient.endColor,
       MinToneHex: toneGradient.startColor,
       author: mapAttribute.authorName,
@@ -6176,7 +6176,7 @@ export class WeatherService {
 
 
           if (row.c[2]) {
-            if (row.c[2].v) {
+            if (row.c[2].v !== undefined) {
               if (isNaN(parseFloat(row.c[2].v))) {
                 height = -99
                 alert(`匯入表單時發現${row.c[0].v}${row.c[1].v}的高度資料不是數字`)
@@ -6192,7 +6192,7 @@ export class WeatherService {
 
 
           if (row.c[3]) {
-            if (row.c[3].v) {
+            if (row.c[3].v !== undefined) {
               if (isNaN(parseFloat(row.c[3].v))) {
                 tone = -99
                 alert(`匯入表單時發現${row.c[0].v}${row.c[1].v}的色調資料不是數字`)

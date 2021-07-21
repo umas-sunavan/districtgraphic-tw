@@ -20,10 +20,12 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
   mapName: string = '台灣天氣資訊地圖'
   author: string = '伍瑪斯'
   heightDimensionTitle: string = '今日降雨量'
+  heightDimensionUnit: string = '毫米'
   toneDimensionTitle: string = '本日最高溫'
+  toneDimensionUnit: string = '度C'
   requireToneDimension: boolean = true
   requireHeightDimension: boolean = true
-  mapDescription: string = "經由Opendata抓出來的API資料"
+  mapDescription: string = "透過氣象局Opendata，能夠取得每小時更新一次的氣象資料\n顏色代表每小時最高溫度，高度代表每小時降雨量\n資料來源是氣象局提供的資料唷！"
   sourceUrl: string = "https://docs.google.com/spreadsheets/d/1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q/edit?usp=sharing"
   toneGradient: ToneGradient = { startColor: '70a7f3', endColor: 'EEF588' };
   isWeatherMap: boolean = true
@@ -60,7 +62,9 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
           this.author = mapData.author
           this.mapName = mapData.mapName
           this.heightDimensionTitle = mapData.HeightDimensionTitle
+          this.heightDimensionUnit = mapData.HeightDimensionUnit
           this.toneDimensionTitle = mapData.ToneDimensionTitle
+          this.toneDimensionUnit = mapData.ToneDimensionUnit
           this.requireHeightDimension = mapData.requireHeightDimension === "true" ? true : false
           this.requireToneDimension = mapData.requireToneDimension === "true" ? true : false
           this.mapDescription = mapData.mapDescription
@@ -123,6 +127,8 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
     // add them in case they are not exist in the form due to the "disable" directive
     if (!mapAttribute.heightTitle) mapAttribute.heightTitle = ''
     if (!mapAttribute.toneTitle) mapAttribute.toneTitle = ''
+    if (!mapAttribute.heightUnit) mapAttribute.heightUnit = ''
+    if (!mapAttribute.toneUnit) mapAttribute.toneUnit = ''
     const pushedMapRef = this.weatherService.pushMapToFirebase(mapAttribute, toneGradient, mapSource)
     if (pushedMapRef.key) {
       const mapId: string = pushedMapRef.key

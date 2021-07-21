@@ -138,7 +138,9 @@ export interface MapInfoInFirebase {
     authorEmail: string 
     mapTitle: string 
     toneTitle: string
+    toneUnit: string
     heightTitle: string
+    heightUnit: string
     requireHeightDimension:boolean | string
     requireToneDimension:boolean | string
     mapDescriptionInput:string

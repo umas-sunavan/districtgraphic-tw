@@ -22,11 +22,17 @@
             <div class="" *ngIf="this.meshDataOnHtml">
                 <div [ngClass]="requireHeightDimension ? '' : 'd-none'">
                     <small class="zh font-size-s">{{heightDimensionTitle}}</small>
-                    <h3 class="en font-size-l">{{this.meshDataOnHtml.height | number: '1.1-1'}}</h3>
+                    <div class="align-items-baseline  d-flex">
+                        <h3 class="en font-size-l pe-1">{{this.meshDataOnHtml.height | number: '1.1-1'}}</h3>
+                        <small class="zh font-size-s">{{heightDimensionUnit}}</small>
+                    </div>
                 </div>
                 <div [ngClass]="requireToneDimension ? '' : 'd-none'">
                     <small class="zh font-size-s">{{toneDimensionTitle}}</small>
-                    <h3 class="en font-size-l">{{this.meshDataOnHtml.tone | number: '1.1-1'}}</h3>
+                    <div class="align-items-baseline  d-flex">
+                        <h3 class="en font-size-l pe-1">{{this.meshDataOnHtml.tone | number: '1.1-1'}}</h3>
+                        <small class="zh font-size-s">{{toneDimensionUnit}}</small>
+                    </div>
                 </div>
             </div>
         </div>
@@ -50,17 +56,21 @@
         <div type="button" class="mb-2 legend tone-gradient"
             [ngStyle]="{'background-image': 'linear-gradient(to right,#' + toneGradient.startColor + ', #' + toneGradient.endColor + ')'}">
         </div>
-        <p *ngIf="requireToneDimension" class="en theme-font font-size-m" [ngStyle]="{'color': isWeatherMap ? '#0088DC' : '#'+ toneGradient.endColor }">
-            {{toneExtremum.min | number: '1.1-1'}} ~ 
+        <p *ngIf="requireToneDimension" class="en theme-font font-size-m"
+            [ngStyle]="{'color': isWeatherMap ? '#0088DC' : '#'+ toneGradient.endColor }">
+            {{toneExtremum.min | number: '1.1-1'}} ~
             {{toneExtremum.max | number: '1.1-1'}}
         </p>
-        <p *ngIf="requireToneDimension" class="mb-2 theme-font-s-zh" [ngStyle]="{'color': isWeatherMap ? '#0088DC' : '#'+ toneGradient.endColor }">
+        <p *ngIf="requireToneDimension" class="mb-2 theme-font-s-zh"
+            [ngStyle]="{'color': isWeatherMap ? '#0088DC' : '#'+ toneGradient.endColor }">
             {{toneDimensionTitle}}範圍
         </p>
-        <p *ngIf="requireToneDimension" class="en theme-font font-size-m" [ngStyle]="{'color': isWeatherMap ? '#0088DC' : '#'+ toneGradient.endColor }">
+        <p *ngIf="requireHeightDimension" class="en theme-font font-size-m"
+            [ngStyle]="{'color': isWeatherMap ? '#0088DC' : '#'+ toneGradient.endColor }">
             {{sumHeight| number: '1.1-1'}}
         </p>
-        <p *ngIf="requireToneDimension" class="mb-2 theme-font-s-zh" [ngStyle]="{'color': isWeatherMap ? '#0088DC' : '#'+ toneGradient.endColor }">
+        <p *ngIf="requireHeightDimension" class="mb-2 theme-font-s-zh"
+            [ngStyle]="{'color': isWeatherMap ? '#0088DC' : '#'+ toneGradient.endColor }">
             {{heightDimensionTitle}}加總
         </p>
         <p class="text-end map-description theme-font-s-zh mt-auto d-flex">{{mapDescription}}</p>
@@ -130,12 +140,11 @@
             <div class="mb-4 d-flex flex-column">
                 <p class="theme-font-s-zh mb-2">第二步：填上你的資料，並取得表單的公開超連結</p>
                 <div class="d-flex ">
-                    <img class="flex-grow-1 rounded-theme bg-white p-2" [src]="weatherService.addBaseUrl('/assets/imgs/step-2.gif')"
-                    [srcset]="
+                    <img class="flex-grow-1 rounded-theme bg-white p-2"
+                        [src]="weatherService.addBaseUrl('/assets/imgs/step-2.gif')" [srcset]="
                 weatherService.addBaseUrl('/assets/imgs/step-2@1.5x.gif 1.5x') + ' , ' +
                 weatherService.addBaseUrl('/assets/imgs/step-2@2x.gif 2x') + ', ' +
-                weatherService.addBaseUrl('/assets/imgs/step-2@3x.gif 3x') + ', '"
-                    >
+                weatherService.addBaseUrl('/assets/imgs/step-2@3x.gif 3x') + ', '">
                 </div>
             </div>
             <div class="w-100" class="d-flex flex-column">
@@ -146,7 +155,9 @@
                             pattern="https://docs\.google\.com/spreadsheets/d/.+"
                             (keydown.enter)="clickSubmit($event, submitUrlForm)"
                             placeholder="https://docs.google.com/spreadsheets/d/1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q/edit?usp=sharing"
-                            name="urlLink" ngModel required pattern="https://docs\.google\.com/spreadsheets/d/.+">
+                            name="urlLink"
+                            ngModel
+                            required pattern="https://docs\.google\.com/spreadsheets/d/.+">
                         <p *ngIf="urlLink.touched" class="text-danger theme-font-s-zh d-invisible">
                             <span *ngIf="urlLink.errors?.required">此為必填</span>
                             <span *ngIf="urlLink.errors?.pattern">請貼上正確的Share Link.</span>
@@ -176,7 +187,7 @@
                 </svg>
             </button>
         </div>
-        <div class="overflow-auto vh-70 rounded-theme pe-0 pe-sm-4 flex-column flex-sm-row">
+        <div class="overflow-auto vh-70 rounded-theme pe-0 pe-sm-4 d-flex flex-column flex-sm-row">
             <div class="pe-0 pe-sm-4">
                 <div class="rounded-theme flex-column d-flex bg-white p-4 pt-3 mb-4 input-container">
                     <p class="theme-font-s-zh ps-2 ">作者名稱</p>
@@ -239,11 +250,25 @@
                         *ngIf="heightTitle.touched && requireHeightInput && heightTitle.value==''">此為必填</span>
                 </div>
                 <div class="rounded-theme flex-column d-flex bg-white p-4 pt-3 mb-4 input-container">
+                    <p class="theme-font-s-zh ps-2 ">高度單位</p>
+                    <input type="text" class="p-2" placeholder="如：毫米" name="heightUnit" ngModel #heightUnit="ngModel"
+                        [disabled]="!requireHeightInput.value">
+                    <span class="text-danger theme-font-s-zh d-invisible m-0"
+                        *ngIf="heightUnit.touched && requireHeightInput && heightUnit.value==''">此為必填</span>
+                </div>
+                <div class="rounded-theme flex-column d-flex bg-white p-4 pt-3 mb-4 input-container">
                     <p class="theme-font-s-zh ps-2 ">色調代表何種資料？</p>
                     <input value="" type="text" class="p-2" placeholder="如：溫度" name="toneTitle" ngModel
                         #toneTitle="ngModel" [disabled]="!requireToneInput.value">
                     <span class="text-danger theme-font-s-zh d-invisible m-0"
                         *ngIf="toneTitle.touched && requireToneInput.value && toneTitle.value==''">此為必填</span>
+                </div>
+                <div class="rounded-theme flex-column d-flex bg-white p-4 pt-3 mb-4 input-container">
+                    <p class="theme-font-s-zh ps-2 ">色調單位</p>
+                    <input type="text" class="p-2" placeholder="如：度C" name="toneUnit" ngModel #toneUnit="ngModel"
+                        [disabled]="!requireToneInput.value">
+                    <span class="text-danger theme-font-s-zh d-invisible m-0"
+                        *ngIf="toneUnit.touched && requireToneInput && toneUnit.value==''">此為必填</span>
                 </div>
                 <div class="rounded-theme flex-column d-flex bg-white p-4 pt-3 mb-4">
                     <p class="theme-font-s-zh ps-2 ">挑選地圖色調</p>
@@ -300,7 +325,8 @@
     </form>
 </div>
 <!-- 瀏覽所有地圖 -->
-<div class="map-list h-100 w-100 position-fixed popup-bg min-height-70" [ngClass]="showBrowseMapsPopup? 'd-flex':'d-none'">
+<div class="map-list h-100 w-100 position-fixed popup-bg min-height-70"
+    [ngClass]="showBrowseMapsPopup? 'd-flex':'d-none'">
     <div class="pb-0 rounded-theme rounded-theme justify-content-between popup m-auto d-flex flex-column">
         <div class="pb-4 d-flex justify-content-between align-items-stretch">
             <h1 class="zh font-size-m theme-font">其他網友製作的地圖</h1>
