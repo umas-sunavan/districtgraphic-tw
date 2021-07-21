@@ -55,10 +55,10 @@
             {{toneExtremum.max | number: '1.1-1'}}
         </p>
         <p *ngIf="requireToneDimension" class="mb-2 theme-font-s-zh" [ngStyle]="{'color': isWeatherMap ? '#0088DC' : '#'+ toneGradient.endColor }">
-            {{toneDimensionTitle}}
+            {{toneDimensionTitle}}範圍
         </p>
         <p *ngIf="requireToneDimension" class="en theme-font font-size-m" [ngStyle]="{'color': isWeatherMap ? '#0088DC' : '#'+ toneGradient.endColor }">
-            {{sumHeight| number: '1.1-1'}}範圍
+            {{sumHeight| number: '1.1-1'}}
         </p>
         <p *ngIf="requireToneDimension" class="mb-2 theme-font-s-zh" [ngStyle]="{'color': isWeatherMap ? '#0088DC' : '#'+ toneGradient.endColor }">
             {{heightDimensionTitle}}加總
