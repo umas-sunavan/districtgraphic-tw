@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
 import gsap, { Power1 } from 'gsap';
-import { BoxGeometry, CameraHelper, Color, CylinderGeometry, DirectionalLight, DirectionalLightHelper, Font, FontLoader, FrontSide, Group, HemisphereLight, HemisphereLightHelper, IcosahedronBufferGeometry, Intersection, IUniform, Light, LightShadow, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshPhongMaterial, MeshStandardMaterial, Object3D, PerspectiveCamera, PointLight, PointLightHelper, Raycaster, Scene, Shader, ShaderMaterial, SphereGeometry, SpotLight, SpotLightHelper, TextGeometry, Vector3, WebGLRenderer } from 'three';
+import { BoxGeometry, CameraHelper, Clock, Color, CylinderGeometry, DirectionalLight, DirectionalLightHelper, Font, FontLoader, FrontSide, Group, HemisphereLight, HemisphereLightHelper, IcosahedronBufferGeometry, Intersection, IUniform, Light, LightShadow, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshPhongMaterial, MeshStandardMaterial, Object3D, PerspectiveCamera, PointLight, PointLightHelper, Raycaster, Scene, Shader, ShaderMaterial, SphereGeometry, SpotLight, SpotLightHelper, TextGeometry, Vector3, WebGL1Renderer, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { WeatherService } from '../weather.service';
@@ -22,6 +22,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   renderer: WebGLRenderer
   light: PointLight
   directionalLight: DirectionalLight
+  pointLight: PointLight
   hemisphereLight: HemisphereLight
   spotlight: SpotLight
   raycaster: Raycaster
@@ -43,7 +44,8 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   dimensionRequirement: { height: boolean, tone: boolean } = { height: true, tone: true }
   toneExtremum: { max: number, min: number } = { max: 0, min: 0 }
   dbList: AngularFireList<any>
-  sumHeight: number
+  sumHeight: number;
+  measureRenderTime: number = 0
 
   constructor(
     private weatherServer: WeatherService,
@@ -58,8 +60,9 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       0.1,
       1000
     );
-    this.renderer = new WebGLRenderer()
+    this.renderer = new WebGLRenderer({ precision: "lowp" , antialias:true})
     this.directionalLight = new DirectionalLight()
+    this.pointLight = new PointLight()
     this.hemisphereLight = new HemisphereLight()
     this.spotlight = new SpotLight()
     this.raycaster = new Raycaster()
@@ -104,6 +107,38 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         // console.log(action.payload.val());
       });
     });
+    let eachRate = 0
+    setTimeout(() => {
+      let expectedFrameRate = this.renderer.info.render.frame / 30
+      let useHighPerformance = expectedFrameRate > 10
+      let useLowPerformance = expectedFrameRate < 4
+      console.log(expectedFrameRate, useHighPerformance);
+      if (useHighPerformance) {
+        const hqLight = new DirectionalLight()
+        this.setupShadowTexture(hqLight, this.renderer.capabilities.maxTextureSize)
+        hqLight.intensity = 0.35
+        hqLight.color = new Color(0xffffff)
+        hqLight.position.set(-7, 7, -5)
+        hqLight.castShadow = true
+        this.directionalLight.removeFromParent()
+        this.scene.add(hqLight)
+      }
+      if (useLowPerformance) {
+        // this.renderer = new WebGLRenderer({ antialias: true, precision: "highp" })
+        const hqLight = new DirectionalLight()
+        hqLight.castShadow = false
+        hqLight.intensity = 0.35
+        hqLight.color = new Color(0xffffff)
+        hqLight.position.set(-7, 7, -5)
+        this.directionalLight.removeFromParent()
+        this.scene.add(hqLight)
+      }
+
+
+      // 3.656466666663686 in low
+      // -4.017333333333333
+
+    }, 6000);
   }
 
   transparentMesh = (mesh: Mesh, opacity: number = 0.6) => {
@@ -262,15 +297,15 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.scene.background = new Color(0xeeeeee)
   }
 
-  setupShadowTexture = (light: DirectionalLight) => {
+  setupShadowTexture = (light: DirectionalLight, textureSize:number) => {
     light.shadow.camera.near = 8;
     light.shadow.camera.far = 18;
     light.shadow.camera.left = -8;
     light.shadow.camera.right = 6;
     light.shadow.camera.top = 6;
     light.shadow.camera.bottom = 0;
-    light.shadow.mapSize.width = this.renderer.capabilities.maxTextureSize
-    light.shadow.mapSize.height = this.renderer.capabilities.maxTextureSize
+    light.shadow.mapSize.width = textureSize
+    light.shadow.mapSize.height = textureSize
   }
 
   setupLight = () => {
@@ -278,14 +313,20 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.hemisphereLight.color = new Color(0xffffff)
     this.scene.add(this.hemisphereLight)
 
-    this.setupShadowTexture(this.directionalLight)
+    this.setupShadowTexture(this.directionalLight, 512)
 
-    this.directionalLight.intensity = 0.4
+    this.directionalLight.intensity = 0.35
     this.directionalLight.color = new Color(0xffffff)
     this.directionalLight.position.set(-7, 7, -5)
     this.directionalLight.castShadow = true
     this.scene.add(this.directionalLight)
     // this.scene.add(new CameraHelper(this.directionalLight.shadow.camera));
+
+    this.pointLight.intensity = 0.1
+    this.pointLight.color = new Color(0xffffff)
+    this.pointLight.position.set(5, 6, -2)
+    this.scene.add(this.pointLight)
+    // this.scene.add(new PointLightHelper(this.pointLight));
   }
 
   createMeshesData = (graphsData: DistrictGraphData[]): DistrictMeshData[] => {
@@ -534,7 +575,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       if (this.dimensionRequirement.height) {
         const maxHeightTitleMesh = this.createTextMesh(font, maxHeightMesh.mesh3d, maxHeightMesh.zhDistrictName, maxHeightMesh.rgbColor)
         // const minHeightTitleMesh = this.createTextMesh(font, minHeightMesh.mesh3d, minHeightMesh.zhDistrictName, minHeightMesh.rgbColor)
-        const maxHeightSubtitleMesh = this.createTextMesh(font, maxHeightMesh.mesh3d, `最高${this.units.height} ${Math.round(+maxHeightMesh.height * 10) / 10}`, maxHeightMesh.rgbColor)
+        const maxHeightSubtitleMesh = this.createTextMesh(font, maxHeightMesh.mesh3d, `最高 ${Math.round(+maxHeightMesh.height * 10) / 10}`, maxHeightMesh.rgbColor)
         // const minHeightSubtitleMesh = this.createTextMesh(font, minHeightMesh.mesh3d, `最高降雨量 ${Math.round(+minHeightMesh.height * 10) / 10}mm`, minHeightMesh.rgbColor)
         maxHeightMeshGroup = this.createTextMeshGroup(maxHeightTitleMesh, maxHeightSubtitleMesh)
         // minHeightMeshGroup = this.createTextMeshGroup(minHeightTitleMesh, minHeightSubtitleMesh)
@@ -548,8 +589,8 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       if (this.dimensionRequirement.tone) {
         const maxToneTitleMesh = this.createTextMesh(font, maxToneMesh.mesh3d, maxToneMesh.zhDistrictName, maxToneMesh.rgbColor)
         const minToneTitleMesh = this.createTextMesh(font, minToneMesh.mesh3d, minToneMesh.zhDistrictName, minToneMesh.rgbColor)
-        const maxToneSubtitleMesh = this.createTextMesh(font, maxToneMesh.mesh3d, `最高${this.units.tone} ${Math.round(+maxToneMesh.tone * 10) / 10}`, maxToneMesh.rgbColor)
-        const minToneSubtitleMesh = this.createTextMesh(font, minToneMesh.mesh3d, `最低${this.units.tone} ${Math.round(+minToneMesh.tone * 10) / 10}`, minToneMesh.rgbColor)
+        const maxToneSubtitleMesh = this.createTextMesh(font, maxToneMesh.mesh3d, `最高 ${Math.round(+maxToneMesh.tone * 10) / 10}`, maxToneMesh.rgbColor)
+        const minToneSubtitleMesh = this.createTextMesh(font, minToneMesh.mesh3d, `最低 ${Math.round(+minToneMesh.tone * 10) / 10}`, minToneMesh.rgbColor)
         maxToneMeshGroup = this.createTextMeshGroup(maxToneTitleMesh, maxToneSubtitleMesh)
         minToneMeshGroup = this.createTextMeshGroup(minToneTitleMesh, minToneSubtitleMesh)
         this.animateText(maxToneMeshGroup, maxToneMesh)
@@ -635,8 +676,9 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   animate = () => {
+
     if (environment.isRenderCountLimited) {
-      if (this.renderer.info.render.frame < 90) {
+      if (this.renderer.info.render.frame < 1800) {
         if (!this.showPopup) {
           requestAnimationFrame(this.animate);
           this.renderer.render(this.scene, this.camera);

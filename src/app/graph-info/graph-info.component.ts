@@ -71,7 +71,7 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
           this.sourceUrl = mapData.sourceUrl
           this.toneGradient = { startColor: mapData.MinToneHex, endColor: mapData.MaxToneHex}
           this.isWeatherMap = false
-          console.log(mapData);
+          console.log(mapData, this.mapDescription);
         })
       }
     })

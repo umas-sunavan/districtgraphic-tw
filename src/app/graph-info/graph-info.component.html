@@ -52,28 +52,30 @@
                 #openBtn>創建你的地圖！</button>
         </div>
     </div>
-    <div class="col-6 d-flex flex-column align-items-end ms-auto" [ngClass]="showCreateMapPopup? 'blur':''">
-        <div type="button" class="mb-2 legend tone-gradient"
-            [ngStyle]="{'background-image': 'linear-gradient(to right,#' + toneGradient.startColor + ', #' + toneGradient.endColor + ')'}">
+    <div class="col-6 d-flex flex-column align-items-end justify-content-end" [ngClass]="showCreateMapPopup? 'blur':''">
+        <div class="d-none d-sm-flex flex-column flex-grow-1 align-items-end ms-auto">
+            <div type="button" class="mb-2 legend tone-gradient"
+                [ngStyle]="{'background-image': 'linear-gradient(to right,#' + toneGradient.startColor + ', #' + toneGradient.endColor + ')'}">
+            </div>
+            <p *ngIf="requireToneDimension" class="en theme-font font-size-m"
+                [ngStyle]="{'color': isWeatherMap ? '#0088DC' : '#'+ toneGradient.endColor }">
+                {{toneExtremum.min | number: '1.1-1'}} ~
+                {{toneExtremum.max | number: '1.1-1'}}
+            </p>
+            <p *ngIf="requireToneDimension" class="mb-2 theme-font-s-zh"
+                [ngStyle]="{'color': isWeatherMap ? '#0088DC' : '#'+ toneGradient.endColor }">
+                {{toneDimensionTitle}}範圍（{{toneDimensionUnit}}）
+            </p>
+            <p *ngIf="requireHeightDimension" class="en theme-font font-size-m"
+                [ngStyle]="{'color': isWeatherMap ? '#0088DC' : '#'+ toneGradient.endColor }">
+                {{sumHeight| number: '1.1-1'}}
+            </p>
+            <p *ngIf="requireHeightDimension" class="mb-2 theme-font-s-zh"
+                [ngStyle]="{'color': isWeatherMap ? '#0088DC' : '#'+ toneGradient.endColor }">
+                {{heightDimensionTitle}}加總（{{heightDimensionUnit}}）
+            </p>
+            <p class="text-end map-description theme-font-s-zh mt-auto d-flex">{{mapDescription}}</p>
         </div>
-        <p *ngIf="requireToneDimension" class="en theme-font font-size-m"
-            [ngStyle]="{'color': isWeatherMap ? '#0088DC' : '#'+ toneGradient.endColor }">
-            {{toneExtremum.min | number: '1.1-1'}} ~
-            {{toneExtremum.max | number: '1.1-1'}}
-        </p>
-        <p *ngIf="requireToneDimension" class="mb-2 theme-font-s-zh"
-            [ngStyle]="{'color': isWeatherMap ? '#0088DC' : '#'+ toneGradient.endColor }">
-            {{toneDimensionTitle}}範圍
-        </p>
-        <p *ngIf="requireHeightDimension" class="en theme-font font-size-m"
-            [ngStyle]="{'color': isWeatherMap ? '#0088DC' : '#'+ toneGradient.endColor }">
-            {{sumHeight| number: '1.1-1'}}
-        </p>
-        <p *ngIf="requireHeightDimension" class="mb-2 theme-font-s-zh"
-            [ngStyle]="{'color': isWeatherMap ? '#0088DC' : '#'+ toneGradient.endColor }">
-            {{heightDimensionTitle}}加總
-        </p>
-        <p class="text-end map-description theme-font-s-zh mt-auto d-flex">{{mapDescription}}</p>
         <a [href]="sourceUrl" target="_blank" style="pointer-events: all;" class="py-2 d-flex align-items-center">
             <p class="pe-1 theme-font-s-zh">地圖原始資料</p>
             <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -138,7 +140,7 @@
                 </div>
             </div>
             <div class="mb-4 d-flex flex-column">
-                <p class="theme-font-s-zh mb-2">第二步：填上你的資料，並取得表單的公開超連結</p>
+                <p class="theme-font-s-zh mb-2">第二步：在表單填上數據資料，並複製公開超連結</p>
                 <div class="d-flex ">
                     <img class="flex-grow-1 rounded-theme bg-white p-2"
                         [src]="weatherService.addBaseUrl('/assets/imgs/step-2.gif')" [srcset]="
@@ -148,19 +150,17 @@
                 </div>
             </div>
             <div class="w-100" class="d-flex flex-column">
-                <p class="theme-font-s-zh mb-2">第三步：貼上表單的公開超連結</p>
+                <p class="theme-font-s-zh mb-2">第三步：貼上表單的超連結</p>
                 <div class="flex-wrap rounded-theme d-flex bg-white p-2 input-container">
                     <div class="d-flex flex-column flex-grow-1">
                         <input type="url" class="p-2 m-2 " #urlLink="ngModel" #urlLinkNativeTag
                             pattern="https://docs\.google\.com/spreadsheets/d/.+"
                             (keydown.enter)="clickSubmit($event, submitUrlForm)"
                             placeholder="https://docs.google.com/spreadsheets/d/1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q/edit?usp=sharing"
-                            name="urlLink"
-                            ngModel
-                            required pattern="https://docs\.google\.com/spreadsheets/d/.+">
+                            name="urlLink" ngModel required pattern="https://docs\.google\.com/spreadsheets/d/.+">
                         <p *ngIf="urlLink.touched" class="text-danger theme-font-s-zh d-invisible">
                             <span *ngIf="urlLink.errors?.required">此為必填</span>
-                            <span *ngIf="urlLink.errors?.pattern">請貼上正確的Share Link.</span>
+                            <span *ngIf="urlLink.errors?.pattern">請貼上正確的Google表單超連結</span>
                         </p>
                     </div>
                     <input type="submit" [disabled]="!urlForm.valid" #submitUrlForm

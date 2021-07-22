@@ -6158,8 +6158,20 @@ export class WeatherService {
                 console.warn(`桃園縣已升格為直轄市，故修改為桃園市`);
               }
               if (districtName === "員林鎮") {
-                districtName = "頭份市"
-                console.warn(`桃園縣已升格為直轄市，故修改為桃園市`);
+                districtName = "員林市"
+                console.warn(`員林鎮已升格為縣轄市，故修改為員林市`);
+              }
+              if (districtName === "峨嵋鄉") {
+                districtName = "峨眉鄉"
+                console.warn(`峨嵋鄉為峨眉鄉的別稱，統一改成峨眉鄉`);
+              }
+              if (districtName === "通宵鎮") {
+                districtName = "通霄鎮"
+                console.warn(`通宵鎮為通霄鎮的別稱，統一改成通霄鎮`);
+              }
+              if (districtName === "溪洲鄉") {
+                districtName = "溪州鄉"
+                console.warn(`溪州鄉為溪洲鄉的別稱，統一改成溪州鄉`);
               }
               if (districtName.includes("東沙")) {
                 alert(`匯入表單時，發現有東沙環礁，目前不支援東沙環礁的資料呈現，請在Google表單請移除該筆資料`)
