@@ -115,7 +115,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       console.log(expectedFrameRate, useHighPerformance);
       if (useHighPerformance) {
         const hqLight = new DirectionalLight()
-        this.setupShadowTexture(hqLight, this.renderer.capabilities.maxTextureSize)
+        this.setupShadowTexture(hqLight, 1024)
         hqLight.intensity = 0.35
         hqLight.color = new Color(0xffffff)
         hqLight.position.set(-7, 7, -5)
