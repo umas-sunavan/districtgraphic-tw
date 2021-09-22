@@ -78,6 +78,9 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
+    this.weatherService.getCloudImage().subscribe( next => {
+      console.log(next);
+    })
   }
 
   openBrowseMaps = (btn: any) => {

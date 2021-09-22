@@ -6133,7 +6133,7 @@ export class WeatherService {
           if (row.c[0]) {
             if (row.c[0].v && row.c[0].v !== '#N/A') {
               cityName = row.c[0].v
-              cityName = cityName.replace("台","臺")
+              cityName = cityName.replace("台", "臺")
               if (cityName === "桃園縣") {
                 cityName = "桃園市"
                 console.warn(`桃園縣已升格為直轄市，故修改為桃園市`);
@@ -6152,7 +6152,7 @@ export class WeatherService {
           if (row.c[1]) {
             if (row.c[0].v && row.c[0].v !== '#N/A') {
               districtName = row.c[1].v
-              districtName = districtName.replace("台","臺")
+              districtName = districtName.replace("台", "臺")
               if (districtName === "頭份鎮") {
                 districtName = "頭份市"
                 console.warn(`桃園縣已升格為直轄市，故修改為桃園市`);
@@ -6212,10 +6212,10 @@ export class WeatherService {
                 tone = +row.c[3].v
               }
             } else {
-              alert(`匯入表單時，發現第${index+1}行的色調資料出現錯誤！`)
+              alert(`匯入表單時，發現第${index + 1}行的色調資料出現錯誤！`)
             }
           } else {
-            alert(`匯入表單時，發現第${index+1}行的色調資料出現錯誤！請確定有填上值`)
+            alert(`匯入表單時，發現第${index + 1}行的色調資料出現錯誤！請確定有填上值`)
           }
 
 
@@ -6273,6 +6273,13 @@ export class WeatherService {
       sumTone += +district.tone
     })
     return (sumTone / districts.length)
+  }
+
+  getCloudImage = () => {
+
+    return this.httpclient.get<any>('https://us-central1-fluid-mote-320807.cloudfunctions.net/retriveCloudImage', 
+    // @ts-ignore
+    { headers: {}, responseType: 'arraybuffer' as ConstrainDOMStringParameters })
   }
 
 }
