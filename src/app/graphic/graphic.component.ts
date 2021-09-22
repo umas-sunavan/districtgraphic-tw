@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
 import gsap, { Power1 } from 'gsap';
-import { BoxGeometry, CameraHelper, Clock, Color, CylinderGeometry, DataTexture, DirectionalLight, DirectionalLightHelper, Font, FontLoader, FrontSide, Group, HemisphereLight, HemisphereLightHelper, IcosahedronBufferGeometry, Intersection, IUniform, Light, LightShadow, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshPhongMaterial, MeshStandardMaterial, Object3D, PerspectiveCamera, PlaneGeometry, PointLight, PointLightHelper, Raycaster, Scene, Shader, ShaderMaterial, SphereGeometry, SpotLight, SpotLightHelper, TextGeometry, Vector3, WebGL1Renderer, WebGLRenderer } from 'three';
+import { BoxGeometry, CameraHelper, Clock, Color, CylinderGeometry, DataTexture, DirectionalLight, DirectionalLightHelper, DoubleSide, Font, FontLoader, FrontSide, Group, HemisphereLight, HemisphereLightHelper, IcosahedronBufferGeometry, Intersection, IUniform, Light, LightShadow, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshPhongMaterial, MeshStandardMaterial, Object3D, PerspectiveCamera, PlaneGeometry, PointLight, PointLightHelper, Raycaster, Scene, Shader, ShaderMaterial, SphereGeometry, SpotLight, SpotLightHelper, TextGeometry, Vector3, WebGL1Renderer, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { WeatherService } from '../weather.service';
@@ -60,7 +60,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       0.1,
       1000
     );
-    this.renderer = new WebGLRenderer({ precision: "lowp" , antialias:true})
+    this.renderer = new WebGLRenderer({ precision: "lowp", antialias: true })
     this.directionalLight = new DirectionalLight()
     this.pointLight = new PointLight()
     this.hemisphereLight = new HemisphereLight()
@@ -146,23 +146,82 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     canvas.height = 572
     const context = canvas.getContext('2d')
     img.onload = () => {
-      if(!context) throw new Error("No constext found");
+      if (!context) throw new Error("No constext found");
       context.drawImage(img, 0, 0)
-      const imageData = context?.getImageData(0,0,572, 572)
-      const cloudMapTexture = new DataTexture(imageData.data, imageData.width, imageData.height)
-      const cloudMaterial = new MeshLambertMaterial({
-        color:0xffffff,
-        transparent:true,
-        map: cloudMapTexture,
+      let imageData = context?.getImageData(0, 0, 572, 572)
+      imageData = this.filterDarkness(imageData, 100)
+      let alphaImageArray = Uint8ClampedArray.from(imageData.data)
+      let heightImageArray = Uint8ClampedArray.from(imageData.data)
+      heightImageArray = this.shrinkImageData(imageData, 1).data
+      const alphaTexture = new DataTexture(alphaImageArray, imageData.width, imageData.height)
+      const heightTexture = new DataTexture(heightImageArray, imageData.width, imageData.height)
+      const cloudMaterial = new MeshStandardMaterial({
+        color: 0xffffff,
+        transparent: true,
+        map: alphaTexture,
+        // alphaMap: alphaTexture,
+        // displacementMap: heightTexture,
+        // displacementScale: 0.3,
+        side: DoubleSide,
       })
-      const cloudGeo = new PlaneGeometry(100,100,100,100)
+      const cloudGeo = new PlaneGeometry(21.51, 21.51, 572, 572)
+      cloudGeo.rotateY(Math.PI)
+      cloudGeo.rotateZ(Math.PI)
+      cloudGeo.rotateX(-Math.PI * 0.5)
+      cloudGeo.translate(4, 0, -9)
       const cloudObj = new Mesh(cloudGeo, cloudMaterial)
-      cloudObj.rotateX(-Math.PI*0.5)
+      // cloudObj.rotateY(Math.PI)
+      // cloudObj.rotateZ(Math.PI)
+      // cloudObj.rotateX(-Math.PI * 0.5)
+      cloudObj.translateZ(5)
       this.scene.add(cloudObj)
     }
     img.src = 'data:image/jpeg;base64,' + base64String
-    
-    
+  }
+
+  shrinkImageData = (imageData: ImageData, shrinkPixels: number) => {
+    const pixelsToShrink: number[] = []
+
+    const _forEachPixel = (row: number, column: number) => {
+      const pixelId = row * imageData.width + column
+      const isCurren0 = imageData.data[pixelId * 4] <= 0
+      const isUpper0 = imageData.data[(pixelId - imageData.width) * 4] <= 0
+      const isBottom0 = imageData.data[(pixelId + imageData.width) * 4] <= 0
+      const isLeft0 = imageData.data[(pixelId - 1) * 4] <= 0
+      const isRight0 = imageData.data[(pixelId + 1) * 4] <= 0
+      if (!isCurren0) {
+        if (isBottom0 || isRight0 || isLeft0 || isUpper0) {
+          pixelsToShrink.push(pixelId * 4 + 0, pixelId * 4 + 1, pixelId * 4 + 2)
+        }
+      }
+    }
+
+    const _lookUpPixels = (imageData: ImageData) => {
+      for (let row = 0; row < imageData.height; row++) {
+        for (let column = 0; column < imageData.width; column++) {
+          _forEachPixel(row, column)
+        }
+      }
+    }
+
+    for (let shrinkCount = 0; shrinkCount < shrinkPixels; shrinkCount++) {
+      _lookUpPixels(imageData)
+      pixelsToShrink.forEach(pixel => imageData.data[pixel] = 0)
+    }
+
+    return imageData
+  }
+
+  filterDarkness = (imageData: ImageData, threshold: number): ImageData => {
+    for (let pixel = 0; pixel < imageData.data.length; pixel += 4) {
+      const isDarkness = imageData.data[pixel] < threshold ? true : false
+      if (isDarkness) {
+        imageData.data[pixel] = 0
+        imageData.data[pixel + 1] = 0
+        imageData.data[pixel + 2] = 0
+      }
+    }
+    return imageData
   }
 
   transparentMesh = (mesh: Mesh, opacity: number = 0.6) => {
@@ -275,9 +334,11 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
   setupCamera = () => {
     this.camera.aspect = this.canvas.nativeElement.offsetWidth / this.canvas.nativeElement.offsetHeight
-    this.camera.position.set(5, 16, 1);
-    this.camera.lookAt(4, 0, 0);
-    this.animateCamera()
+    // this.camera.position.set(5, 16, 1);
+    this.camera.position.set(0, 16, 0);
+    // this.camera.lookAt(4, 0, 0);
+    this.camera.lookAt(0, 0, 0);
+    // this.animateCamera()
   }
 
   animateCamera = () => {
@@ -321,7 +382,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.scene.background = new Color(0xeeeeee)
   }
 
-  setupShadowTexture = (light: DirectionalLight, textureSize:number) => {
+  setupShadowTexture = (light: DirectionalLight, textureSize: number) => {
     light.shadow.camera.near = 8;
     light.shadow.camera.far = 18;
     light.shadow.camera.left = -8;
