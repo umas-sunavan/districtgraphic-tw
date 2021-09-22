@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
 import gsap, { Power1 } from 'gsap';
-import { BoxGeometry, CameraHelper, Clock, Color, CylinderGeometry, DirectionalLight, DirectionalLightHelper, Font, FontLoader, FrontSide, Group, HemisphereLight, HemisphereLightHelper, IcosahedronBufferGeometry, Intersection, IUniform, Light, LightShadow, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshPhongMaterial, MeshStandardMaterial, Object3D, PerspectiveCamera, PointLight, PointLightHelper, Raycaster, Scene, Shader, ShaderMaterial, SphereGeometry, SpotLight, SpotLightHelper, TextGeometry, Vector3, WebGL1Renderer, WebGLRenderer } from 'three';
+import { BoxGeometry, CameraHelper, Clock, Color, CylinderGeometry, DataTexture, DirectionalLight, DirectionalLightHelper, Font, FontLoader, FrontSide, Group, HemisphereLight, HemisphereLightHelper, IcosahedronBufferGeometry, Intersection, IUniform, Light, LightShadow, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshPhongMaterial, MeshStandardMaterial, Object3D, PerspectiveCamera, PlaneGeometry, PointLight, PointLightHelper, Raycaster, Scene, Shader, ShaderMaterial, SphereGeometry, SpotLight, SpotLightHelper, TextGeometry, Vector3, WebGL1Renderer, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { WeatherService } from '../weather.service';
@@ -48,7 +48,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   measureRenderTime: number = 0
 
   constructor(
-    private weatherServer: WeatherService,
+    private weatherService: WeatherService,
     private db: AngularFireDatabase,
     private route: ActivatedRoute,
   ) {
@@ -87,11 +87,12 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.animate()
   }
 
-  ngAfterViewInit() {
+  async ngAfterViewInit() {
     this.setupRenderer()
     this.setupCamera()
     this.setupScene()
     this.setupLight()
+    await this.setupCloud()
     // this.setupBoxForTest()
     this.setUpTaiwan3dModel().then((Taiwan3dModel: GLTF) => {
       this.mapGltf = Taiwan3dModel
@@ -107,7 +108,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         // console.log(action.payload.val());
       });
     });
-    let eachRate = 0
     setTimeout(() => {
       let expectedFrameRate = this.renderer.info.render.frame / 30
       let useHighPerformance = expectedFrameRate > 10
@@ -133,12 +133,36 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         this.directionalLight.removeFromParent()
         this.scene.add(hqLight)
       }
-
-
-      // 3.656466666663686 in low
-      // -4.017333333333333
-
     }, 6000);
+  }
+
+  setupCloud = async () => {
+    const next = await this.weatherService.getCloudImage().toPromise()
+    const int8Array = new Uint8ClampedArray(next)
+    const base64String = btoa(String.fromCharCode(...int8Array))
+    const img = new Image()
+    const canvas = document.createElement("canvas")
+    canvas.width = 572
+    canvas.height = 572
+    const context = canvas.getContext('2d')
+    img.onload = () => {
+      if(!context) throw new Error("No constext found");
+      context.drawImage(img, 0, 0)
+      const imageData = context?.getImageData(0,0,572, 572)
+      const cloudMapTexture = new DataTexture(imageData.data, imageData.width, imageData.height)
+      const cloudMaterial = new MeshLambertMaterial({
+        color:0xffffff,
+        transparent:true,
+        map: cloudMapTexture,
+      })
+      const cloudGeo = new PlaneGeometry(100,100,100,100)
+      const cloudObj = new Mesh(cloudGeo, cloudMaterial)
+      cloudObj.rotateX(-Math.PI*0.5)
+      this.scene.add(cloudObj)
+    }
+    img.src = 'data:image/jpeg;base64,' + base64String
+    
+    
   }
 
   transparentMesh = (mesh: Mesh, opacity: number = 0.6) => {
@@ -342,7 +366,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
   assignMeshesdEnName = (meshesData: DistrictMeshData[]): DistrictMeshData[] => {
     return meshesData.map(meshData => {
-      const mapMeshGraph = this.weatherServer.districtsEnZhMap.find(map => {
+      const mapMeshGraph = this.weatherService.districtsEnZhMap.find(map => {
         return map.zhCity === meshData.zhCityName && map.zhDistrict === meshData.zhDistrictName
       })
       if (mapMeshGraph) {
@@ -415,7 +439,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
   setUpTaiwan3dModel = () => {
     const loader = new GLTFLoader()
-    return loader.loadAsync(this.weatherServer.addBaseUrl('/assets/taiwam15.gltf'))
+    return loader.loadAsync(this.weatherService.addBaseUrl('/assets/taiwam15.gltf'))
 
   }
 
@@ -424,17 +448,17 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
     if (mapId && mapId !== 'weather') {
       // google sheet 資料
-      this.weatherServer.getMapDataFromFirebase(mapId).subscribe(mapData => {
+      this.weatherService.getMapDataFromFirebase(mapId).subscribe(mapData => {
         this.setupTone(mapData)
         this.setupDimensionText(mapData)
-        const googleSheetId = this.weatherServer.getGoogleSheetIdFromUrl(mapData.sourceUrl)
-        this.weatherServer.getGoogleSheetInfo(googleSheetId).subscribe(graphData => {
+        const googleSheetId = this.weatherService.getGoogleSheetIdFromUrl(mapData.sourceUrl)
+        this.weatherService.getGoogleSheetInfo(googleSheetId).subscribe(graphData => {
           this.generateMap(graphData)
         })
       })
     } else {
       // weather 資料
-      this.weatherServer.getWeatherInfo().subscribe(graphData => {
+      this.weatherService.getWeatherInfo().subscribe(graphData => {
         // gltf.scene.position.set(0, 0, this.move)
         this.generateMap(graphData)
       });
@@ -564,7 +588,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
 
     const loader = new FontLoader()
-    loader.load(this.weatherServer.addBaseUrl('/assets/jf-openhuninn-1.1_Regular_districts_words.json'), ((font) => {
+    loader.load(this.weatherService.addBaseUrl('/assets/jf-openhuninn-1.1_Regular_districts_words.json'), ((font) => {
       if (this.textsMeshAndColor.length !== 0) {
         this.textsMeshAndColor.forEach(textMesh => textMesh.textMesh.removeFromParent())
         this.textsMeshAndColor = []

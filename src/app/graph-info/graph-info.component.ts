@@ -4,6 +4,7 @@ import { FormControl, FormGroup } from '@angular/forms';
 import { DistrictMeshData, MapAttributeForm, MapInfoInFirebase, MapSource, ToneGradient } from '../interfaces';
 import { WeatherService } from '../weather.service';
 import { Router, ActivatedRoute, ParamMap } from '@angular/router';
+import { calcPossibleSecurityContexts } from '@angular/compiler/src/template_parser/binding_parser';
 
 
 @Component({
@@ -77,10 +78,7 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
     })
   }
 
-  ngAfterViewInit() {
-    this.weatherService.getCloudImage().subscribe( next => {
-      console.log(next);
-    })
+  async ngAfterViewInit() {
   }
 
   openBrowseMaps = (btn: any) => {
