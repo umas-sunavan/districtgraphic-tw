@@ -28,7 +28,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   raycaster: Raycaster
   mouse: { x: number, y: number }
   taiwanMap: Object3D
-  mouseHoveAnyMesh: boolean
+  mouseHoverAnyMesh: boolean
   orbitcontrols: OrbitControls
   textsMeshAndColor: { textMesh: Mesh, districtMesh: Mesh, textHexColor: string }[]
   meshDataOnHtml: DistrictMeshData | undefined
@@ -69,7 +69,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.mouse = { x: 0, y: 0 }
     this.taiwanMap = new Object3D()
     this.textsMeshAndColor = []
-    this.mouseHoveAnyMesh = false
+    this.mouseHoverAnyMesh = false
     this.orbitcontrols = new OrbitControls(this.camera, this.renderer.domElement)
     this.meshesData = []
 
@@ -149,7 +149,8 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       if (!context) throw new Error("No constext found");
       context.drawImage(img, 0, 0)
       let imageData = context?.getImageData(0, 0, 572, 572)
-      imageData = this.filterDarkness(imageData, 100)
+      this.filterDarkness(imageData, 100)
+      this.normalize(imageData, {top: 255, bottom: 100})
       let alphaImageArray = Uint8ClampedArray.from(imageData.data)
       let heightImageArray = Uint8ClampedArray.from(imageData.data)
       heightImageArray = this.shrinkImageData(imageData, 1).data
@@ -158,25 +159,35 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       const cloudMaterial = new MeshStandardMaterial({
         color: 0xffffff,
         transparent: true,
-        map: alphaTexture,
-        // alphaMap: alphaTexture,
-        // displacementMap: heightTexture,
-        // displacementScale: 0.3,
+        // map: alphaTexture,
+        alphaMap: alphaTexture,
+        displacementMap: heightTexture,
+        displacementScale: -0.1,
         side: DoubleSide,
       })
-      const cloudGeo = new PlaneGeometry(21.51, 21.51, 572, 572)
+      cloudMaterial.depthWrite = false
+      const cloudGeo = new PlaneGeometry(17.4, 17.4, 572, 572)
       cloudGeo.rotateY(Math.PI)
-      cloudGeo.rotateZ(Math.PI)
+      cloudGeo.rotateZ(Math.PI*0.993)
       cloudGeo.rotateX(-Math.PI * 0.5)
-      cloudGeo.translate(4, 0, -9)
+      cloudGeo.translate(3.7, 0, 0.4)
       const cloudObj = new Mesh(cloudGeo, cloudMaterial)
-      // cloudObj.rotateY(Math.PI)
-      // cloudObj.rotateZ(Math.PI)
-      // cloudObj.rotateX(-Math.PI * 0.5)
-      cloudObj.translateZ(5)
+      cloudObj.translateY(2)
+      cloudObj.name = 'cloud'
       this.scene.add(cloudObj)
     }
     img.src = 'data:image/jpeg;base64,' + base64String
+  }
+
+  normalize = (imageData: ImageData, from: {top: number, bottom: number}): ImageData => {
+    for (let i = 0; i < imageData.data.length; i++) {
+      const oldBandwith = 255 - from.bottom
+      const enlargeRate = 255 / oldBandwith
+      const newPixel = (imageData.data[i] - from.bottom) * enlargeRate
+      const intNewPixel = Math.floor(newPixel)
+      imageData.data[i] = intNewPixel
+    }
+    return imageData
   }
 
   shrinkImageData = (imageData: ImageData, shrinkPixels: number) => {
@@ -271,10 +282,10 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     if (mapMeshes) {
       const intersactions = this.raycaster.intersectObjects(mapMeshes.children, true)
       if (intersactions.length > 0) {
-        this.mouseHoveAnyMesh = true
+        this.mouseHoverAnyMesh = true
         this.onMouseHoveringLand(mapMeshes, intersactions)
-      } else if (this.mouseHoveAnyMesh) {
-        this.mouseHoveAnyMesh = false
+      } else if (this.mouseHoverAnyMesh) {
+        this.mouseHoverAnyMesh = false
         this.onMouseLeavingLand(mapMeshes)
       }
     } else {
@@ -284,6 +295,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
   onMouseHoveringLand = (mapMeshes: Object3D, intersactions: Intersection[]) => {
     this.transparentMeshes(mapMeshes)
+    this.hideClouds(mapMeshes)
     this.textsMeshAndColor.forEach(textMesh => this.transparentMesh(textMesh.textMesh))
     const nearestToCamera: Intersection = intersactions.sort((a, b) => a.distance - b.distance)[0]
     const meshOnHover = <Mesh>nearestToCamera.object
