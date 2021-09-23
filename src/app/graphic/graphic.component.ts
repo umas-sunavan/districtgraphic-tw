@@ -446,7 +446,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   setupMapMesh = (scene: Group) => {
-    const mapMaterial = new MeshPhongMaterial({ opacity: 1.0, transparent: true})
+    const mapMaterial = new MeshPhongMaterial({ opacity: 1.0, transparent: false})
     const [maxTone, minTone] = this.getToneRange(this.meshesData)
     this.taiwanMap = scene;
     scene.traverse(object3d => {
