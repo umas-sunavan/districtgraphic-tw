@@ -156,4 +156,8 @@ export interface MapInfoInFirebase {
     goNextPopup: string
   }
   
-  
+  export interface textMeshAndColor {
+    textMesh: Mesh, 
+    districtMesh: Mesh, 
+    textHexColor: string
+  }

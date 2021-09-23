@@ -13,6 +13,7 @@ import { ColorUtilService } from '../color-util.service';
 import { CloudService } from '../cloud.service';
 import { Observable } from 'rxjs';
 import { MeshUtilService } from '../mesh-util.service';
+import { TextMeshService } from '../text-mesh.service';
 
 @Component({
   selector: 'app-graphic',
@@ -60,7 +61,8 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     private imageProcess: ImageProcessingService,
     private colorUtil: ColorUtilService,
     private cloudService: CloudService,
-    private meshUtilService: MeshUtilService
+    private meshUtilService: MeshUtilService,
+    private textMeshService: TextMeshService
   ) {
     this.dbList = this.db.list('maps')
     this.scene = new Scene()
@@ -153,7 +155,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     })
   }
 
-
   paintMeshFrom = (array: DistrictMeshData[], meshToPaint: Mesh, paintNotFoundMesh: { r: number, g: number, b: number } = { r: 1, g: 1, b: 1 }) => {
     const meshData = this.meshUtilService.findDataByMeshName(array, meshToPaint)
     if (meshData && meshData.rgbColor) {
@@ -170,23 +171,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     } else if (!shouldShow && isShowing) {
       this.scene.remove(isShowing)
     }
-  }
-
-  paintMapTextFrom = (hoverMesh: Mesh) => {
-    const textAboveMesh = this.textsMeshAndColor.filter(text => text.textMesh.name.includes(hoverMesh.name))
-    if (textAboveMesh.length !== 0) {
-      // @ts-ignore 
-      textAboveMesh.forEach(foundText => foundText.textMesh.material.color = this.colorUtil.convertHexTo0to1(foundText.textHexColor))
-    } else {
-      // no text above the hovered mesh
-    }
-  }
-
-  paintColorOnMapText = () => {
-    this.textsMeshAndColor.forEach(({ textMesh, textHexColor: textColor }) => {
-      // @ts-ignore
-      textMesh.material.color = this.colorUtil.convertHexTo0to1(textColor)
-    });
   }
 
   onMousemove = (event: MouseEvent) => {
@@ -223,7 +207,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       this.htmlTextColor = '#' + this.colorUtil.convert0to1ToHex(districtColor);
       this.mouseHoverDetalessMesh = false
     } else { this.mouseHoverDetalessMesh = true }
-    this.paintMapTextFrom(meshOnHover)
+    this.textMeshService.paintMapTextFromMesh(this.textsMeshAndColor, meshOnHover)
     this.updateTextOnHtml(intersactions)
   }
 
@@ -236,7 +220,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         (<Mesh>object3d).material.opacity = 1
       }
     })
-    this.paintColorOnMapText()
+    this.textMeshService.paintColorOnMapText(this.textsMeshAndColor)
   }
 
   updateTextOnHtml = (intersactions: Intersection[]) => {
@@ -378,13 +362,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     return [maxTone, minTone]
   }
 
-  getHeightRange = (meshData: DistrictMeshData[]) => {
-    const sortByTemp = meshData.sort((a, b) => +a.height - +b.height)
-    const maxHeight = +sortByTemp[sortByTemp.length - 1].height
-    const minHeight = +sortByTemp[0].height
-    return [maxHeight, minHeight]
-  }
-
   getMaterialColorByRate = (highestTemp: number, lowestTemp: number, currentTemp: number): { r: number, g: number, b: number, } => {
     const colorRate = (currentTemp - highestTemp) / (lowestTemp - highestTemp)
     const hashColor = this.colorUtil.blendHexColors('#' + this.toneColor.maxHex, '#' + this.toneColor.minHex, colorRate)
@@ -392,7 +369,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   animateDistrictsHeight = () => {
-    const [maxHeight, minHeight] = this.getHeightRange(this.meshesData)
+    const [maxHeight, minHeight] = this.textMeshService.getHeightRange(this.meshesData)
     for (let i = 0; i < this.meshesData.length; i++) {
       const height = this.meshesData[i].height || 0
       const from = { scaleY: 1 }
@@ -431,7 +408,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       // google sheet 資料
       this.weatherService.getMapDataFromFirebase(mapId).subscribe(mapData => {
         this.setupTone(mapData)
-        this.setupDimensionText(mapData)
+        this.textMeshService.setupDimensionText(this.dimensionRequirement, mapData)
         const googleSheetId = this.weatherService.getGoogleSheetIdFromUrl(mapData.sourceUrl)
         this.weatherService.getGoogleSheetInfo(googleSheetId).subscribe(graphData => {
           this.generateMap(graphData)
@@ -444,11 +421,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         this.generateMap(graphData)
       });
     }
-  }
-
-  setupDimensionText = (mapInfo: MapInfoInFirebase) => {
-    this.dimensionRequirement.height = mapInfo.requireHeightDimension === "true" ? true : false
-    this.dimensionRequirement.tone = mapInfo.requireToneDimension === "true" ? true : false
   }
 
   setupTone = (mapInfo: MapInfoInFirebase) => {
@@ -468,7 +440,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.toneExtremum = this.getToneExtremum(this.meshesData)
     this.sumHeight = this.getSumHeight(this.meshesData)
     this.setupMapMesh(gltf.scene)
-    this.setupAndAnimateTexts()
+    this.textMeshService.setupAndAnimateTexts(this.camera, this.orbitcontrols, this.scene, this.dimensionRequirement, this.taiwanMap, this.meshesData, this.textsMeshAndColor)
     this.animateDistrictsHeight()
     this.scene.add(gltf.scene)
   }
@@ -503,16 +475,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     });
   }
 
-  getArrayIndexBy = (extremumType: string, array: any[]): number => {
-    let position
-    if (extremumType === 'max') {
-      position = 0
-    } else if (extremumType === 'min') {
-      position = array.length - 1
-    }
-    return position || 0
-  }
-
   
 
   getToneExtremum = (meshesData: DistrictMeshData[]): { max: number, min: number } => {
@@ -526,125 +488,10 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     return sum
   }
 
-  getExtremumMesh = (extremumType: string, dimension: string, meshesData: DistrictMeshData[]): DistrictMeshData => {
-    let extremumToneMesh: Mesh | undefined
-    let returnMeshData: DistrictMeshData | undefined
-    if (dimension === 'tone') {
-      const dataSortByDimension = meshesData.sort((a, b) => +b.tone - +a.tone)
-      const extremumIndex = this.getArrayIndexBy(extremumType, dataSortByDimension)
-      extremumToneMesh = this.meshUtilService.findMeshFromIndex(this.taiwanMap, dataSortByDimension, extremumIndex)
-      returnMeshData = dataSortByDimension[extremumIndex]
-    } else if (dimension === 'height') {
-      const dataSortByDimension = meshesData.sort((a, b) => +b.height - +a.height)
-      const extremumIndex = this.getArrayIndexBy(extremumType, dataSortByDimension)
-      extremumToneMesh = this.meshUtilService.findMeshFromIndex(this.taiwanMap, dataSortByDimension, extremumIndex)
-      returnMeshData = dataSortByDimension[extremumIndex]
-    }
-    if (returnMeshData) {
-      return returnMeshData
-    } else {
-      throw new Error(`cannot get the ${dimension} mesh`);
-    }
-  }
-
-  setupAndAnimateTexts = () => {
-    const maxToneMesh = this.getExtremumMesh('max', 'tone', this.meshesData);
-    const minToneMesh = this.getExtremumMesh('min', 'tone', this.meshesData);
-    const maxHeightMesh = this.getExtremumMesh('max', 'height', this.meshesData);
-    const minHeightMesh = this.getExtremumMesh('min', 'height', this.meshesData);
-
-    const loader = new FontLoader()
-    loader.load(this.weatherService.addBaseUrl('/assets/jf-openhuninn-1.1_Regular_districts_words.json'), ((font) => {
-      if (this.textsMeshAndColor.length !== 0) {
-        this.textsMeshAndColor.forEach(textMesh => textMesh.textMesh.removeFromParent())
-        this.textsMeshAndColor = []
-      }
-
-      let maxHeightMeshGroup: Group
-      // let minHeightMeshGroup: Group
-      if (this.dimensionRequirement.height) {
-        const maxHeightTitleMesh = this.createTextMesh(font, maxHeightMesh.mesh3d, maxHeightMesh.zhDistrictName, maxHeightMesh.rgbColor)
-        // const minHeightTitleMesh = this.createTextMesh(font, minHeightMesh.mesh3d, minHeightMesh.zhDistrictName, minHeightMesh.rgbColor)
-        const maxHeightSubtitleMesh = this.createTextMesh(font, maxHeightMesh.mesh3d, `最高 ${Math.round(+maxHeightMesh.height * 10) / 10}`, maxHeightMesh.rgbColor)
-        // const minHeightSubtitleMesh = this.createTextMesh(font, minHeightMesh.mesh3d, `最高降雨量 ${Math.round(+minHeightMesh.height * 10) / 10}mm`, minHeightMesh.rgbColor)
-        maxHeightMeshGroup = this.createTextMeshGroup(maxHeightTitleMesh, maxHeightSubtitleMesh)
-        // minHeightMeshGroup = this.createTextMeshGroup(minHeightTitleMesh, minHeightSubtitleMesh)
-        this.animateText(maxHeightMeshGroup, maxHeightMesh)
-        // this.animateText(minHeightMeshGroup, minHeightMesh)
-
-      }
-
-      let maxToneMeshGroup: Group
-      let minToneMeshGroup: Group
-      if (this.dimensionRequirement.tone) {
-        const maxToneTitleMesh = this.createTextMesh(font, maxToneMesh.mesh3d, maxToneMesh.zhDistrictName, maxToneMesh.rgbColor)
-        const minToneTitleMesh = this.createTextMesh(font, minToneMesh.mesh3d, minToneMesh.zhDistrictName, minToneMesh.rgbColor)
-        const maxToneSubtitleMesh = this.createTextMesh(font, maxToneMesh.mesh3d, `最高 ${Math.round(+maxToneMesh.tone * 10) / 10}`, maxToneMesh.rgbColor)
-        const minToneSubtitleMesh = this.createTextMesh(font, minToneMesh.mesh3d, `最低 ${Math.round(+minToneMesh.tone * 10) / 10}`, minToneMesh.rgbColor)
-        maxToneMeshGroup = this.createTextMeshGroup(maxToneTitleMesh, maxToneSubtitleMesh)
-        minToneMeshGroup = this.createTextMeshGroup(minToneTitleMesh, minToneSubtitleMesh)
-        this.animateText(maxToneMeshGroup, maxToneMesh)
-        this.animateText(minToneMeshGroup, minToneMesh)
-      }
-
-      this.orbitcontrols.addEventListener('change', () => {
-        if (maxToneMeshGroup) { maxToneMeshGroup.children.forEach(child => child.lookAt(this.camera.position)) }
-        if (minToneMeshGroup) { minToneMeshGroup.children.forEach(child => child.lookAt(this.camera.position)) }
-        if (maxHeightMeshGroup) { maxHeightMeshGroup.children.forEach(child => child.lookAt(this.camera.position)) }
-      })
-    }))
-  }
+  
 
   faceCamera = (objects: Object3D[]) => {
     objects.forEach(object => object.lookAt(this.camera.position))
-  }
-
-  animateText = (fontMesh: Mesh | Group, meshData: DistrictMeshData) => {
-    const [highestRainning, lowestRainning] = this.getHeightRange(this.meshesData)
-    const normalizedScale = (+meshData.height - lowestRainning) / (highestRainning - lowestRainning);
-    const from = { scaleY: 1 }
-    const to = { scaleY: normalizedScale * 20 + 1 }
-    gsap.to(from, {
-      ...to,
-      duration: 1.5,
-      onUpdate: (() => {
-        fontMesh.position.setY((from.scaleY / 9))
-      }),
-      ease: Power1.easeInOut
-    }).delay(1).play()
-  }
-
-  createTextMeshGroup = (title: Mesh, subtitle: Mesh): Group => {
-    const group = new Group()
-    subtitle.scale.set(0.6, 0.6, 0.6)
-    subtitle.translateY(1.7)
-    subtitle.name = subtitle.name + ' subtitle'
-    title.translateY(1)
-    title.name = title.name + ' subtitle'
-    group.add(title).add(subtitle)
-    this.scene.add(group)
-    return group
-  }
-
-  createTextMesh = (font: Font, districtMesh: Mesh, text: string, districtColor: { r: number, g: number, b: number }, options: { size: number, height: number } = { size: 0.3, height: 0 }): Mesh => {
-    let fontMesh
-    const geometry = new TextGeometry(text, {
-      font: font,
-      height: options.height,
-      size: options.size,
-      curveSegments: 1,
-      bevelEnabled: false
-    })
-
-    const fontColor: string = this.colorUtil.blendHexColors('#' + this.colorUtil.convert0to1ToHex(districtColor), '#000000', 0.3)
-    const material = new MeshPhongMaterial({ color: +('0x' + fontColor) })
-    fontMesh = new Mesh(geometry, material)
-    fontMesh.position.set(districtMesh.position.x * 0.1, districtMesh.position.y * 0.1, districtMesh.position.z * 0.1)
-    fontMesh.name = `${districtMesh.name} text`
-
-    this.textsMeshAndColor.push({ textMesh: fontMesh, districtMesh: districtMesh, textHexColor: fontColor + '' })
-    this.scene.add(fontMesh)
-    return fontMesh
   }
 
   animate = () => {
