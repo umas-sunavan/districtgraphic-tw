@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import gsap, { Power1 } from 'gsap';
 import { Font, FontLoader, Group, Mesh, MeshPhongMaterial, Object3D, PerspectiveCamera, Scene, TextGeometry } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { ColorUtilService } from './color-util.service';
@@ -15,10 +16,14 @@ export class TextMeshService {
     private meshUtilService: MeshUtilService,
     private weatherService: WeatherService,
     private colorUtil: ColorUtilService
-  ) { }
+  ) {
+    this.textsMeshAndColor = []
+  }
 
-  paintMapTextFromMesh = (textsMeshAndColor: textMeshAndColor[], hoverMesh: Mesh) => {
-    const textAboveMesh = textsMeshAndColor.filter(text => text.textMesh.name.includes(hoverMesh.name))
+  textsMeshAndColor: { textMesh: Mesh, districtMesh: Mesh, textHexColor: string }[]
+
+  paintMapTextFromMesh = (hoverMesh: Mesh) => {
+    const textAboveMesh = this.textsMeshAndColor.filter(text => text.textMesh.name.includes(hoverMesh.name))
     if (textAboveMesh.length !== 0) {
       // @ts-ignore 
       textAboveMesh.forEach(foundText => foundText.textMesh.material.color = this.colorUtil.convertHexTo0to1(foundText.textHexColor))
@@ -27,11 +32,15 @@ export class TextMeshService {
     }
   }
 
-  paintColorOnMapText = (textsMeshAndColor: textMeshAndColor[]) => {
-    textsMeshAndColor.forEach(({ textMesh, textHexColor: textColor }) => {
+  paintColorOnMapText = () => {
+    this.textsMeshAndColor.forEach(({ textMesh, textHexColor: textColor }) => {
       // @ts-ignore
       textMesh.material.color = this.colorUtil.convertHexTo0to1(textColor)
     });
+  }
+
+  transparentTextMesh = () => {
+    this.textsMeshAndColor.forEach(textMesh => this.meshUtilService.transparentMesh(textMesh.textMesh))
   }
 
   setupDimensionText = (requireDimension: { height: boolean, tone: boolean }, mapInfo: MapInfoInFirebase) => {
@@ -39,7 +48,7 @@ export class TextMeshService {
     requireDimension.tone = mapInfo.requireToneDimension === "true" ? true : false
   }
 
-  setupAndAnimateTexts = (camera:PerspectiveCamera, orbitcontrols:OrbitControls, scene:Scene, requireDimension: { height: boolean, tone: boolean }, taiwanMap:Object3D, meshesData:DistrictMeshData[], textsMeshAndColor: textMeshAndColor[]) => {
+  setupAndAnimateTexts = (camera:PerspectiveCamera, orbitcontrols:OrbitControls, scene:Scene, requireDimension: { height: boolean, tone: boolean }, taiwanMap:Object3D, meshesData:DistrictMeshData[]) => {
     const maxToneMesh = this.getExtremumMesh(taiwanMap, 'max', 'tone', meshesData);
     const minToneMesh = this.getExtremumMesh(taiwanMap, 'min', 'tone', meshesData);
     const maxHeightMesh = this.getExtremumMesh(taiwanMap, 'max', 'height', meshesData);
@@ -47,18 +56,18 @@ export class TextMeshService {
 
     const loader = new FontLoader()
     loader.load(this.weatherService.addBaseUrl('/assets/jf-openhuninn-1.1_Regular_districts_words.json'), ((font) => {
-      if (textsMeshAndColor.length !== 0) {
-        textsMeshAndColor.forEach(textMesh => textMesh.textMesh.removeFromParent())
-        textsMeshAndColor = []
+      if (this.textsMeshAndColor.length !== 0) {
+        this.textsMeshAndColor.forEach(textMesh => textMesh.textMesh.removeFromParent())
+        this.textsMeshAndColor = []
       }
 
       let maxHeightMeshGroup: Group
       // let minHeightMeshGroup: Group
       if (requireDimension.height) {
-        const maxHeightTitleMesh = this.createTextMesh(textsMeshAndColor, font, maxHeightMesh.mesh3d, maxHeightMesh.zhDistrictName, maxHeightMesh.rgbColor)
-        // const minHeightTitleMesh = this.createTextMesh(textsMeshAndColor, font, minHeightMesh.mesh3d, minHeightMesh.zhDistrictName, minHeightMesh.rgbColor)
-        const maxHeightSubtitleMesh = this.createTextMesh(textsMeshAndColor, font, maxHeightMesh.mesh3d, `最高 ${Math.round(+maxHeightMesh.height * 10) / 10}`, maxHeightMesh.rgbColor)
-        // const minHeightSubtitleMesh = this.createTextMesh(textsMeshAndColor, font, minHeightMesh.mesh3d, `最高降雨量 ${Math.round(+minHeightMesh.height * 10) / 10}mm`, minHeightMesh.rgbColor)
+        const maxHeightTitleMesh = this.createTextMesh(font, maxHeightMesh.mesh3d, maxHeightMesh.zhDistrictName, maxHeightMesh.rgbColor)
+        // const minHeightTitleMesh = this.createTextMesh(font, minHeightMesh.mesh3d, minHeightMesh.zhDistrictName, minHeightMesh.rgbColor)
+        const maxHeightSubtitleMesh = this.createTextMesh(font, maxHeightMesh.mesh3d, `最高 ${Math.round(+maxHeightMesh.height * 10) / 10}`, maxHeightMesh.rgbColor)
+        // const minHeightSubtitleMesh = this.createTextMesh(font, minHeightMesh.mesh3d, `最高降雨量 ${Math.round(+minHeightMesh.height * 10) / 10}mm`, minHeightMesh.rgbColor)
         scene.add(maxHeightTitleMesh)
         // scene.add(minHeightTitleMesh)
         scene.add(maxHeightSubtitleMesh)
@@ -75,10 +84,10 @@ export class TextMeshService {
       let maxToneMeshGroup: Group
       let minToneMeshGroup: Group
       if (requireDimension.tone) {
-        const maxToneTitleMesh = this.createTextMesh(textsMeshAndColor, font, maxToneMesh.mesh3d, maxToneMesh.zhDistrictName, maxToneMesh.rgbColor)
-        const minToneTitleMesh = this.createTextMesh(textsMeshAndColor, font, minToneMesh.mesh3d, minToneMesh.zhDistrictName, minToneMesh.rgbColor)
-        const maxToneSubtitleMesh = this.createTextMesh(textsMeshAndColor, font, maxToneMesh.mesh3d, `最高 ${Math.round(+maxToneMesh.tone * 10) / 10}`, maxToneMesh.rgbColor)
-        const minToneSubtitleMesh = this.createTextMesh(textsMeshAndColor, font, minToneMesh.mesh3d, `最低 ${Math.round(+minToneMesh.tone * 10) / 10}`, minToneMesh.rgbColor)
+        const maxToneTitleMesh = this.createTextMesh(font, maxToneMesh.mesh3d, maxToneMesh.zhDistrictName, maxToneMesh.rgbColor)
+        const minToneTitleMesh = this.createTextMesh(font, minToneMesh.mesh3d, minToneMesh.zhDistrictName, minToneMesh.rgbColor)
+        const maxToneSubtitleMesh = this.createTextMesh(font, maxToneMesh.mesh3d, `最高 ${Math.round(+maxToneMesh.tone * 10) / 10}`, maxToneMesh.rgbColor)
+        const minToneSubtitleMesh = this.createTextMesh(font, minToneMesh.mesh3d, `最低 ${Math.round(+minToneMesh.tone * 10) / 10}`, minToneMesh.rgbColor)
         scene.add(maxToneTitleMesh)
         scene.add(minToneTitleMesh)
         scene.add(maxToneSubtitleMesh)
@@ -164,7 +173,7 @@ export class TextMeshService {
     return group
   }
 
-  createTextMesh = (textsMeshAndColor:textMeshAndColor[], font: Font, districtMesh: Mesh, text: string, districtColor: { r: number, g: number, b: number }, options: { size: number, height: number } = { size: 0.3, height: 0 }): Mesh => {
+  createTextMesh = (font: Font, districtMesh: Mesh, text: string, districtColor: { r: number, g: number, b: number }, options: { size: number, height: number } = { size: 0.3, height: 0 }): Mesh => {
     let fontMesh
     const geometry = new TextGeometry(text, {
       font: font,
@@ -179,7 +188,7 @@ export class TextMeshService {
     fontMesh = new Mesh(geometry, material)
     fontMesh.position.set(districtMesh.position.x * 0.1, districtMesh.position.y * 0.1, districtMesh.position.z * 0.1)
     fontMesh.name = `${districtMesh.name} text`
-    textsMeshAndColor.push({ textMesh: fontMesh, districtMesh: districtMesh, textHexColor: fontColor + '' })
+    this.textsMeshAndColor.push({ textMesh: fontMesh, districtMesh: districtMesh, textHexColor: fontColor + '' })
     return fontMesh
   }
 }

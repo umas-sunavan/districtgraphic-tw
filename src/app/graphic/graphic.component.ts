@@ -36,7 +36,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   taiwanMap: Object3D
   mouseHoverAnyMesh: boolean
   orbitcontrols: OrbitControls
-  textsMeshAndColor: { textMesh: Mesh, districtMesh: Mesh, textHexColor: string }[]
   meshDataOnHtml: DistrictMeshData | undefined
   htmlTextColor: string = '#666666'
   mouseHoverDetalessMesh: boolean = false
@@ -80,7 +79,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.raycaster = new Raycaster()
     this.mouse = { x: 0, y: 0 }
     this.taiwanMap = new Object3D()
-    this.textsMeshAndColor = []
     this.mouseHoverAnyMesh = false
     this.orbitcontrols = new OrbitControls(this.camera, this.renderer.domElement)
     this.meshesData = []
@@ -196,7 +194,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   onMouseHoveringLand = (mapMeshes: Object3D, intersactions: Intersection[]) => {
     this.meshUtilService.transparentMeshes(mapMeshes)
     this.setCloudDisplay(false)
-    this.textsMeshAndColor.forEach(textMesh => this.meshUtilService.transparentMesh(textMesh.textMesh))
+    this.textMeshService.transparentTextMesh()
     const nearestToCamera: Intersection = intersactions.sort((a, b) => a.distance - b.distance)[0]
     const meshOnHover = <Mesh>nearestToCamera.object
     this.paintMeshFrom(this.meshesData, meshOnHover);
@@ -207,7 +205,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       this.htmlTextColor = '#' + this.colorUtil.convert0to1ToHex(districtColor);
       this.mouseHoverDetalessMesh = false
     } else { this.mouseHoverDetalessMesh = true }
-    this.textMeshService.paintMapTextFromMesh(this.textsMeshAndColor, meshOnHover)
+    this.textMeshService.paintMapTextFromMesh(meshOnHover)
     this.updateTextOnHtml(intersactions)
   }
 
@@ -220,7 +218,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         (<Mesh>object3d).material.opacity = 1
       }
     })
-    this.textMeshService.paintColorOnMapText(this.textsMeshAndColor)
+    this.textMeshService.paintColorOnMapText()
   }
 
   updateTextOnHtml = (intersactions: Intersection[]) => {
@@ -440,7 +438,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.toneExtremum = this.getToneExtremum(this.meshesData)
     this.sumHeight = this.getSumHeight(this.meshesData)
     this.setupMapMesh(gltf.scene)
-    this.textMeshService.setupAndAnimateTexts(this.camera, this.orbitcontrols, this.scene, this.dimensionRequirement, this.taiwanMap, this.meshesData, this.textsMeshAndColor)
+    this.textMeshService.setupAndAnimateTexts(this.camera, this.orbitcontrols, this.scene, this.dimensionRequirement, this.taiwanMap, this.meshesData)
     this.animateDistrictsHeight()
     this.scene.add(gltf.scene)
   }
