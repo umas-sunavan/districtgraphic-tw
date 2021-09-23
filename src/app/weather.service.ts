@@ -6275,10 +6275,4 @@ export class WeatherService {
     return (sumTone / districts.length)
   }
 
-  getCloudImage = () => {
-    return this.httpclient.get<any>('https://us-central1-fluid-mote-320807.cloudfunctions.net/retriveCloudImage?type=realtime', 
-    // @ts-ignore
-    { headers: {}, responseType: 'arraybuffer' as ConstrainDOMStringParameters })
-  }
-
 }
