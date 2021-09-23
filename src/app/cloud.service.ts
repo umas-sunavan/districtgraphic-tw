@@ -62,8 +62,8 @@ export class CloudService {
       displacementMap: heightTexture,
       displacementScale: -0.1,
       side: DoubleSide,
+      depthWrite: false
     })
-    cloudMaterial.depthWrite = false
     return cloudMaterial
   }
 

@@ -185,7 +185,7 @@ export class TextMeshService {
     })
 
     const fontColor: string = this.colorUtil.blendHexColors('#' + this.colorUtil.convert0to1ToHex(districtColor), '#000000', 0.3)
-    const material = new MeshPhongMaterial({ color: +('0x' + fontColor) })
+    const material = new MeshPhongMaterial({ color: +('0x' + fontColor), transparent: true})
     fontMesh = new Mesh(geometry, material)
     fontMesh.position.set(districtMesh.position.x * 0.1, districtMesh.position.y * 0.1, districtMesh.position.z * 0.1)
     fontMesh.name = `${districtMesh.name} text`
