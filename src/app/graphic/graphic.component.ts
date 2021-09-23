@@ -12,6 +12,7 @@ import { ImageProcessingService } from '../image-processing.service';
 import { ColorUtilService } from '../color-util.service';
 import { CloudService } from '../cloud.service';
 import { Observable } from 'rxjs';
+import { MeshUtilService } from '../mesh-util.service';
 
 @Component({
   selector: 'app-graphic',
@@ -58,7 +59,8 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     private route: ActivatedRoute,
     private imageProcess: ImageProcessingService,
     private colorUtil: ColorUtilService,
-    private cloudService: CloudService
+    private cloudService: CloudService,
+    private meshUtilService: MeshUtilService
   ) {
     this.dbList = this.db.list('maps')
     this.scene = new Scene()
@@ -152,25 +154,12 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
 
-  transparentMesh = (mesh: Mesh, opacity: number = 0.6) => {
-    if (mesh.isMesh) {
-      const currentMaterial: Material = (<Material>mesh.material)
-      // @ts-ignore
-      currentMaterial.color = { r: 1, g: 1, b: 1 };
-      currentMaterial.opacity = opacity
-    }
-  }
-
   paintMeshFrom = (array: DistrictMeshData[], meshToPaint: Mesh, paintNotFoundMesh: { r: number, g: number, b: number } = { r: 1, g: 1, b: 1 }) => {
-    const meshData = this.findDataByMeshName(array, meshToPaint)
+    const meshData = this.meshUtilService.findDataByMeshName(array, meshToPaint)
     if (meshData && meshData.rgbColor) {
       // @ts-ignore
       meshToPaint.material.color = meshData && meshData.rgbColor ? meshData.rgbColor : paintNotFoundMesh
     }
-  }
-
-  transparentMeshes = (scene: Object3D, opacity: number = 0.6) => {
-    scene.traverse(object3d => this.transparentMesh(<Mesh>object3d, opacity))
   }
 
   setCloudDisplay = (shouldShow: boolean) => {
@@ -221,15 +210,15 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   onMouseHoveringLand = (mapMeshes: Object3D, intersactions: Intersection[]) => {
-    this.transparentMeshes(mapMeshes)
+    this.meshUtilService.transparentMeshes(mapMeshes)
     this.setCloudDisplay(false)
-    this.textsMeshAndColor.forEach(textMesh => this.transparentMesh(textMesh.textMesh))
+    this.textsMeshAndColor.forEach(textMesh => this.meshUtilService.transparentMesh(textMesh.textMesh))
     const nearestToCamera: Intersection = intersactions.sort((a, b) => a.distance - b.distance)[0]
     const meshOnHover = <Mesh>nearestToCamera.object
     this.paintMeshFrom(this.meshesData, meshOnHover);
     // @ts-ignore
     meshOnHover.material.opacity = 1;
-    const districtColor = this.findDataByMeshName(this.meshesData, meshOnHover)?.rgbColor;
+    const districtColor = this.meshUtilService.findDataByMeshName(this.meshesData, meshOnHover)?.rgbColor;
     if (districtColor) {
       this.htmlTextColor = '#' + this.colorUtil.convert0to1ToHex(districtColor);
       this.mouseHoverDetalessMesh = false
@@ -252,7 +241,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
   updateTextOnHtml = (intersactions: Intersection[]) => {
     const nearestCamera: Intersection = intersactions.sort((a, b) => a.distance - b.distance)[0]
-    this.meshDataOnHtml = this.findDataByMeshName(this.meshesData, <Mesh>nearestCamera.object)
+    this.meshDataOnHtml = this.meshUtilService.findDataByMeshName(this.meshesData, <Mesh>nearestCamera.object)
   }
 
   updateMousePosiion = (event: MouseEvent): { x: number, y: number } => {
@@ -396,10 +385,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     return [maxHeight, minHeight]
   }
 
-  findDataByMeshName = (meshesData: DistrictMeshData[], mesh: Mesh): DistrictMeshData | undefined => {
-    return meshesData.find(meshData => `${meshData.enDistrictName}_${meshData.enCityName}` === mesh.name)
-  }
-
   getMaterialColorByRate = (highestTemp: number, lowestTemp: number, currentTemp: number): { r: number, g: number, b: number, } => {
     const colorRate = (currentTemp - highestTemp) / (lowestTemp - highestTemp)
     const hashColor = this.colorUtil.blendHexColors('#' + this.toneColor.maxHex, '#' + this.toneColor.minHex, colorRate)
@@ -503,7 +488,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       if (mesh.isMesh) {
         mesh.material = mapMaterial.clone();
         mesh.receiveShadow = true
-        const meshData = this.findDataByMeshName(this.meshesData, mesh)
+        const meshData = this.meshUtilService.findDataByMeshName(this.meshesData, mesh)
         if (meshData) {
           // 這邊因為有複數的資料，如果有兩個重複的鄉鎮市區資料，那麼地圖會抓到第一個，然後染色。第二個鄉鎮市區資料則不會染色。當mousemove抓到之後染色時就抓不到資料
           meshData.rgbColor = this.getMaterialColorByRate(maxTone, minTone, meshData.tone);
@@ -528,19 +513,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     return position || 0
   }
 
-  findMeshFromIndex = (array: DistrictMeshData[], index: number): Mesh => {
-    let retrunMesh: Mesh = new Mesh()
-    this.taiwanMap.traverse(mesh => {
-      if ((<Mesh>mesh).name === `${array[index].enDistrictName}+${array[index].enCityName}`) {
-        retrunMesh = (<Mesh>mesh)
-      }
-    })
-    if (retrunMesh) {
-      return retrunMesh
-    } else {
-      throw new Error("can't traverse to get mesh info");
-    }
-  }
+  
 
   getToneExtremum = (meshesData: DistrictMeshData[]): { max: number, min: number } => {
     const sortedMesh = meshesData.sort((a, b) => +b.tone - +a.tone)
@@ -559,12 +532,12 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     if (dimension === 'tone') {
       const dataSortByDimension = meshesData.sort((a, b) => +b.tone - +a.tone)
       const extremumIndex = this.getArrayIndexBy(extremumType, dataSortByDimension)
-      extremumToneMesh = this.findMeshFromIndex(dataSortByDimension, extremumIndex)
+      extremumToneMesh = this.meshUtilService.findMeshFromIndex(this.taiwanMap, dataSortByDimension, extremumIndex)
       returnMeshData = dataSortByDimension[extremumIndex]
     } else if (dimension === 'height') {
       const dataSortByDimension = meshesData.sort((a, b) => +b.height - +a.height)
       const extremumIndex = this.getArrayIndexBy(extremumType, dataSortByDimension)
-      extremumToneMesh = this.findMeshFromIndex(dataSortByDimension, extremumIndex)
+      extremumToneMesh = this.meshUtilService.findMeshFromIndex(this.taiwanMap, dataSortByDimension, extremumIndex)
       returnMeshData = dataSortByDimension[extremumIndex]
     }
     if (returnMeshData) {
