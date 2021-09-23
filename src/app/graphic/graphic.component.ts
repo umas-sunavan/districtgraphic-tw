@@ -50,7 +50,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   dbList: AngularFireList<any>
   sumHeight: number;
   measureRenderTime: number = 0
-  cloud: Object3D
+  cloud?: Object3D
 
   constructor(
     private weatherService: WeatherService,
@@ -85,7 +85,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.box2 = new Mesh()
     this.light = new PointLight()
     this.sumHeight = 0
-    this.cloud = new Object3D
   }
 
   ngOnInit(): void {
@@ -146,13 +145,13 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   initCloud = () => {
-    this.cloudService.initCloudMesh().then( next => {
+    this.cloudService.initCloudMesh().then(next => {
       this.cloud = next
       this.scene.add(next)
     })
   }
 
-  
+
   transparentMesh = (mesh: Mesh, opacity: number = 0.6) => {
     if (mesh.isMesh) {
       const currentMaterial: Material = (<Material>mesh.material)
@@ -174,12 +173,13 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     scene.traverse(object3d => this.transparentMesh(<Mesh>object3d, opacity))
   }
 
-  toggleCloudDisplay = (toShow: boolean) => {
-    if (toShow) {
+  setCloudDisplay = (shouldShow: boolean) => {
+    const isShowing = this.scene.children.find(mesh => mesh.name === this.cloud?.name)
+    if (!this.cloud) return
+    if (shouldShow && !isShowing) {
       this.scene.add(this.cloud)
-    } else {
-      const cloudOnScene = this.scene.children.find(mesh => mesh.name === this.cloud.name)
-      if (cloudOnScene) this.scene.remove(cloudOnScene)
+    } else if (!shouldShow && isShowing) {
+      this.scene.remove(isShowing)
     }
   }
 
@@ -222,7 +222,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
   onMouseHoveringLand = (mapMeshes: Object3D, intersactions: Intersection[]) => {
     this.transparentMeshes(mapMeshes)
-    this.toggleCloudDisplay(false)
+    this.setCloudDisplay(false)
     this.textsMeshAndColor.forEach(textMesh => this.transparentMesh(textMesh.textMesh))
     const nearestToCamera: Intersection = intersactions.sort((a, b) => a.distance - b.distance)[0]
     const meshOnHover = <Mesh>nearestToCamera.object
@@ -239,7 +239,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   onMouseLeavingLand = (mapMeshes: Object3D) => {
-    this.toggleCloudDisplay(true)
+    this.setCloudDisplay(true)
     mapMeshes.traverse(object3d => {
       if ((<Mesh>object3d).isMesh) {
         this.paintMeshFrom(this.meshesData, <Mesh>object3d);
