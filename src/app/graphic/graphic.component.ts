@@ -46,6 +46,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   dbList: AngularFireList<any>
   sumHeight: number;
   measureRenderTime: number = 0
+  cloud: Object3D
 
   constructor(
     private weatherService: WeatherService,
@@ -77,6 +78,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.box2 = new Mesh()
     this.light = new PointLight()
     this.sumHeight = 0
+    this.cloud = new Object3D
   }
 
   ngOnInit(): void {
@@ -92,7 +94,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.setupCamera()
     this.setupScene()
     this.setupLight()
-    await this.setupCloud()
+    this.setupCloud()
     // this.setupBoxForTest()
     this.setUpTaiwan3dModel().then((Taiwan3dModel: GLTF) => {
       this.mapGltf = Taiwan3dModel
@@ -136,50 +138,52 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     }, 6000);
   }
 
-  setupCloud = async () => {
-    const next = await this.weatherService.getCloudImage().toPromise()
-    const int8Array = new Uint8ClampedArray(next)
-    const base64String = btoa(String.fromCharCode(...int8Array))
-    const img = new Image()
-    const canvas = document.createElement("canvas")
-    canvas.width = 572
-    canvas.height = 572
-    const context = canvas.getContext('2d')
-    img.onload = () => {
-      if (!context) throw new Error("No constext found");
-      context.drawImage(img, 0, 0)
-      let imageData = context?.getImageData(0, 0, 572, 572)
-      this.filterDarkness(imageData, 100)
-      this.normalize(imageData, {top: 255, bottom: 100})
-      let alphaImageArray = Uint8ClampedArray.from(imageData.data)
-      let heightImageArray = Uint8ClampedArray.from(imageData.data)
-      heightImageArray = this.shrinkImageData(imageData, 1).data
-      const alphaTexture = new DataTexture(alphaImageArray, imageData.width, imageData.height)
-      const heightTexture = new DataTexture(heightImageArray, imageData.width, imageData.height)
-      const cloudMaterial = new MeshStandardMaterial({
-        color: 0xffffff,
-        transparent: true,
-        // map: alphaTexture,
-        alphaMap: alphaTexture,
-        displacementMap: heightTexture,
-        displacementScale: -0.1,
-        side: DoubleSide,
-      })
-      cloudMaterial.depthWrite = false
-      const cloudGeo = new PlaneGeometry(17.4, 17.4, 572, 572)
-      cloudGeo.rotateY(Math.PI)
-      cloudGeo.rotateZ(Math.PI*0.993)
-      cloudGeo.rotateX(-Math.PI * 0.5)
-      cloudGeo.translate(3.7, 0, 0.4)
-      const cloudObj = new Mesh(cloudGeo, cloudMaterial)
-      cloudObj.translateY(2)
-      cloudObj.name = 'cloud'
-      this.scene.add(cloudObj)
-    }
-    img.src = 'data:image/jpeg;base64,' + base64String
+  setupCloud = () => {
+    this.weatherService.getCloudImage().subscribe(next => {
+      const int8Array = new Uint8ClampedArray(next)
+      const base64String = btoa(String.fromCharCode(...int8Array))
+      const img = new Image()
+      const canvas = document.createElement("canvas")
+      canvas.width = 572
+      canvas.height = 572
+      const context = canvas.getContext('2d')
+      img.onload = () => {
+        if (!context) throw new Error("No context found");
+        context.drawImage(img, 0, 0)
+        let imageData = context?.getImageData(0, 0, 572, 572)
+        this.filterDarkness(imageData, 100)
+        this.normalize(imageData, { bottom: 100 })
+        let alphaImageArray = Uint8ClampedArray.from(imageData.data)
+        let heightImageArray = Uint8ClampedArray.from(imageData.data)
+        heightImageArray = this.shrinkImageData(imageData, 1).data
+        const alphaTexture = new DataTexture(alphaImageArray, imageData.width, imageData.height)
+        const heightTexture = new DataTexture(heightImageArray, imageData.width, imageData.height)
+        const cloudMaterial = new MeshStandardMaterial({
+          color: 0xffffff,
+          transparent: true,
+          // map: alphaTexture,
+          alphaMap: alphaTexture,
+          displacementMap: heightTexture,
+          displacementScale: -0.1,
+          side: DoubleSide,
+        })
+        cloudMaterial.depthWrite = false
+        const cloudGeo = new PlaneGeometry(17.4, 17.4, 572, 572)
+        cloudGeo.rotateY(Math.PI)
+        cloudGeo.rotateZ(Math.PI * 0.993)
+        cloudGeo.rotateX(-Math.PI * 0.5)
+        cloudGeo.translate(3.7, 0, 0.4)
+        const cloudObj = new Mesh(cloudGeo, cloudMaterial)
+        cloudObj.translateY(2)
+        cloudObj.name = 'cloud'
+        this.cloud = cloudObj
+        this.scene.add(cloudObj)
+      }
+      img.src = 'data:image/jpeg;base64,' + base64String
+    })
   }
 
-  normalize = (imageData: ImageData, from: {top: number, bottom: number}): ImageData => {
+  normalize = (imageData: ImageData, from: { bottom: number }): ImageData => {
     for (let i = 0; i < imageData.data.length; i++) {
       const oldBandwith = 255 - from.bottom
       const enlargeRate = 255 / oldBandwith
@@ -256,6 +260,15 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     scene.traverse(object3d => this.transparentMesh(<Mesh>object3d, opacity))
   }
 
+  toggleCloudDisplay = (toShow: boolean) => {
+    if (toShow) {
+      this.scene.add(this.cloud)
+    } else {
+      const cloudOnScene = this.scene.children.find(mesh => mesh.name === this.cloud.name)
+      if(cloudOnScene) this.scene.remove(cloudOnScene)
+    }
+  }
+
   paintMapTextFrom = (hoverMesh: Mesh) => {
     const textAboveMesh = this.textsMeshAndColor.filter(text => text.textMesh.name.includes(hoverMesh.name))
     if (textAboveMesh.length !== 0) {
@@ -295,7 +308,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
   onMouseHoveringLand = (mapMeshes: Object3D, intersactions: Intersection[]) => {
     this.transparentMeshes(mapMeshes)
-    this.hideClouds(mapMeshes)
+    this.toggleCloudDisplay(false)
     this.textsMeshAndColor.forEach(textMesh => this.transparentMesh(textMesh.textMesh))
     const nearestToCamera: Intersection = intersactions.sort((a, b) => a.distance - b.distance)[0]
     const meshOnHover = <Mesh>nearestToCamera.object
@@ -312,6 +325,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   onMouseLeavingLand = (mapMeshes: Object3D) => {
+    this.toggleCloudDisplay(true)
     mapMeshes.traverse(object3d => {
       if ((<Mesh>object3d).isMesh) {
         this.paintMeshFrom(this.meshesData, <Mesh>object3d);
@@ -775,7 +789,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   animate = () => {
 
     if (environment.isRenderCountLimited) {
-      if (this.renderer.info.render.frame < 1800) {
+      if (this.renderer.info.render.frame < 900) {
         if (!this.showPopup) {
           requestAnimationFrame(this.animate);
           this.renderer.render(this.scene, this.camera);
