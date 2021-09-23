@@ -8,6 +8,8 @@ import { DistrictGraphData, DistrictMeshData, MapInfoInFirebase } from '../inter
 import { AngularFireDatabase, AngularFireList } from '@angular/fire/database';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { environment } from 'src/environments/environment';
+import { ImageProcessingService } from '../image-processing.service';
+import { ColorUtilService } from '../color-util.service';
 
 @Component({
   selector: 'app-graphic',
@@ -52,6 +54,8 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     private weatherService: WeatherService,
     private db: AngularFireDatabase,
     private route: ActivatedRoute,
+    private imageProcess:ImageProcessingService,
+    private colorUtil: ColorUtilService
   ) {
     this.dbList = this.db.list('maps')
     this.scene = new Scene()
@@ -143,36 +147,12 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       const int8Array = new Uint8ClampedArray(next)
       const base64String = btoa(String.fromCharCode(...int8Array))
       const img = new Image()
-      const canvas = document.createElement("canvas")
-      canvas.width = 572
-      canvas.height = 572
-      const context = canvas.getContext('2d')
+      const context = this.imageProcess.createCanvasContext()
       img.onload = () => {
         if (!context) throw new Error("No context found");
         context.drawImage(img, 0, 0)
-        let imageData = context?.getImageData(0, 0, 572, 572)
-        this.filterDarkness(imageData, 100)
-        this.normalize(imageData, { bottom: 100 })
-        let alphaImageArray = Uint8ClampedArray.from(imageData.data)
-        let heightImageArray = Uint8ClampedArray.from(imageData.data)
-        heightImageArray = this.shrinkImageData(imageData, 1).data
-        const alphaTexture = new DataTexture(alphaImageArray, imageData.width, imageData.height)
-        const heightTexture = new DataTexture(heightImageArray, imageData.width, imageData.height)
-        const cloudMaterial = new MeshStandardMaterial({
-          color: 0xffffff,
-          transparent: true,
-          // map: alphaTexture,
-          alphaMap: alphaTexture,
-          displacementMap: heightTexture,
-          displacementScale: -0.1,
-          side: DoubleSide,
-        })
-        cloudMaterial.depthWrite = false
-        const cloudGeo = new PlaneGeometry(17.4, 17.4, 572, 572)
-        cloudGeo.rotateY(Math.PI)
-        cloudGeo.rotateZ(Math.PI * 0.993)
-        cloudGeo.rotateX(-Math.PI * 0.5)
-        cloudGeo.translate(3.7, 0, 0.4)
+        const cloudMaterial = this.setupCloudMaterial(context)
+        const cloudGeo = this.setupCloudGeo()
         const cloudObj = new Mesh(cloudGeo, cloudMaterial)
         cloudObj.translateY(2)
         cloudObj.name = 'cloud'
@@ -183,60 +163,36 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     })
   }
 
-  normalize = (imageData: ImageData, from: { bottom: number }): ImageData => {
-    for (let i = 0; i < imageData.data.length; i++) {
-      const oldBandwith = 255 - from.bottom
-      const enlargeRate = 255 / oldBandwith
-      const newPixel = (imageData.data[i] - from.bottom) * enlargeRate
-      const intNewPixel = Math.floor(newPixel)
-      imageData.data[i] = intNewPixel
-    }
-    return imageData
+  setupCloudMaterial = (context: CanvasRenderingContext2D):Material => {
+    const imageData = context.getImageData(0, 0, 572, 572)
+    const imageArray = imageData.data
+    this.imageProcess.filterDarkness(imageData, 100)
+    this.imageProcess.normalize(imageData, { bottom: 100 })
+    let alphaImageArray = Uint8ClampedArray.from(imageArray)
+    let heightImageArray = Uint8ClampedArray.from(imageArray)
+    heightImageArray = this.imageProcess.shrinkImageData(imageData, 1).data
+    const alphaTexture = new DataTexture(alphaImageArray, imageData.width, imageData.height)
+    const heightTexture = new DataTexture(heightImageArray, imageData.width, imageData.height)
+    const cloudMaterial = new MeshStandardMaterial({
+      color: 0xffffff,
+      transparent: true,
+      // map: alphaTexture,
+      alphaMap: alphaTexture,
+      displacementMap: heightTexture,
+      displacementScale: -0.1,
+      side: DoubleSide,
+    })
+    cloudMaterial.depthWrite = false
+    return cloudMaterial
   }
 
-  shrinkImageData = (imageData: ImageData, shrinkPixels: number) => {
-    const pixelsToShrink: number[] = []
-
-    const _forEachPixel = (row: number, column: number) => {
-      const pixelId = row * imageData.width + column
-      const isCurren0 = imageData.data[pixelId * 4] <= 0
-      const isUpper0 = imageData.data[(pixelId - imageData.width) * 4] <= 0
-      const isBottom0 = imageData.data[(pixelId + imageData.width) * 4] <= 0
-      const isLeft0 = imageData.data[(pixelId - 1) * 4] <= 0
-      const isRight0 = imageData.data[(pixelId + 1) * 4] <= 0
-      if (!isCurren0) {
-        if (isBottom0 || isRight0 || isLeft0 || isUpper0) {
-          pixelsToShrink.push(pixelId * 4 + 0, pixelId * 4 + 1, pixelId * 4 + 2)
-        }
-      }
-    }
-
-    const _lookUpPixels = (imageData: ImageData) => {
-      for (let row = 0; row < imageData.height; row++) {
-        for (let column = 0; column < imageData.width; column++) {
-          _forEachPixel(row, column)
-        }
-      }
-    }
-
-    for (let shrinkCount = 0; shrinkCount < shrinkPixels; shrinkCount++) {
-      _lookUpPixels(imageData)
-      pixelsToShrink.forEach(pixel => imageData.data[pixel] = 0)
-    }
-
-    return imageData
-  }
-
-  filterDarkness = (imageData: ImageData, threshold: number): ImageData => {
-    for (let pixel = 0; pixel < imageData.data.length; pixel += 4) {
-      const isDarkness = imageData.data[pixel] < threshold ? true : false
-      if (isDarkness) {
-        imageData.data[pixel] = 0
-        imageData.data[pixel + 1] = 0
-        imageData.data[pixel + 2] = 0
-      }
-    }
-    return imageData
+  setupCloudGeo = ():PlaneGeometry => {
+    const cloudGeo = new PlaneGeometry(17.4, 17.4, 572, 572)
+    cloudGeo.rotateY(Math.PI)
+    cloudGeo.rotateZ(Math.PI * 0.993)
+    cloudGeo.rotateX(-Math.PI * 0.5)
+    cloudGeo.translate(3.7, 0, 0.4)
+    return cloudGeo
   }
 
   transparentMesh = (mesh: Mesh, opacity: number = 0.6) => {
@@ -265,7 +221,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       this.scene.add(this.cloud)
     } else {
       const cloudOnScene = this.scene.children.find(mesh => mesh.name === this.cloud.name)
-      if(cloudOnScene) this.scene.remove(cloudOnScene)
+      if (cloudOnScene) this.scene.remove(cloudOnScene)
     }
   }
 
@@ -317,7 +273,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     meshOnHover.material.opacity = 1;
     const districtColor = this.findDataByMeshName(this.meshesData, meshOnHover)?.rgbColor;
     if (districtColor) {
-      this.htmlTextColor = '#' + this.convert0to1ToHex(districtColor);
+      this.htmlTextColor = '#' + this.colorUtil.convert0to1ToHex(districtColor);
       this.mouseHoverDetalessMesh = false
     } else { this.mouseHoverDetalessMesh = true }
     this.paintMapTextFrom(meshOnHover)
@@ -468,11 +424,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     })
   }
 
-  blendHexColors = (c0: string, c1: string, p: number) => {
-    var f = parseInt(c0.slice(1), 16), t = parseInt(c1.slice(1), 16), R1 = f >> 16, G1 = f >> 8 & 0x00FF, B1 = f & 0x0000FF, R2 = t >> 16, G2 = t >> 8 & 0x00FF, B2 = t & 0x0000FF;
-    return "" + (0x1000000 + (Math.round((R2 - R1) * p) + R1) * 0x10000 + (Math.round((G2 - G1) * p) + G1) * 0x100 + (Math.round((B2 - B1) * p) + B1)).toString(16).slice(1);
-  }
-
   getToneRange = (WeatherInDistricts: DistrictMeshData[]) => {
     const sortByTemp = WeatherInDistricts.sort((a, b) => +a.tone - +b.tone)
     const maxTone = +sortByTemp[sortByTemp.length - 1].tone
@@ -493,8 +444,8 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
   getMaterialColorByRate = (highestTemp: number, lowestTemp: number, currentTemp: number): { r: number, g: number, b: number, } => {
     const colorRate = (currentTemp - highestTemp) / (lowestTemp - highestTemp)
-    const hashColor = this.blendHexColors('#' + this.toneColor.maxHex, '#' + this.toneColor.minHex, colorRate)
-    return this.convertHexTo0to1(hashColor)
+    const hashColor = this.colorUtil.blendHexColors('#' + this.toneColor.maxHex, '#' + this.toneColor.minHex, colorRate)
+    return this.colorUtil.convertHexTo0to1(hashColor)
   }
 
   animateDistrictsHeight = () => {
@@ -577,7 +528,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.setupAndAnimateTexts()
     this.animateDistrictsHeight()
     this.scene.add(gltf.scene)
-
   }
 
   setupMeshData = (graphData: DistrictGraphData[]) => {
@@ -672,8 +622,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     const maxHeightMesh = this.getExtremumMesh('max', 'height', this.meshesData);
     const minHeightMesh = this.getExtremumMesh('min', 'height', this.meshesData);
 
-
-
     const loader = new FontLoader()
     loader.load(this.weatherService.addBaseUrl('/assets/jf-openhuninn-1.1_Regular_districts_words.json'), ((font) => {
       if (this.textsMeshAndColor.length !== 0) {
@@ -707,9 +655,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         this.animateText(maxToneMeshGroup, maxToneMesh)
         this.animateText(minToneMeshGroup, minToneMesh)
       }
-
-
-
 
       this.orbitcontrols.addEventListener('change', () => {
         if (maxToneMeshGroup) { maxToneMeshGroup.children.forEach(child => child.lookAt(this.camera.position)) }
@@ -760,7 +705,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       bevelEnabled: false
     })
 
-    const fontColor: string = this.blendHexColors('#' + this.convert0to1ToHex(districtColor), '#000000', 0.3)
+    const fontColor: string = this.colorUtil.blendHexColors('#' + this.colorUtil.convert0to1ToHex(districtColor), '#000000', 0.3)
     const material = new MeshPhongMaterial({ color: +('0x' + fontColor) })
     fontMesh = new Mesh(geometry, material)
     fontMesh.position.set(districtMesh.position.x * 0.1, districtMesh.position.y * 0.1, districtMesh.position.z * 0.1)
@@ -769,21 +714,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.textsMeshAndColor.push({ textMesh: fontMesh, districtMesh: districtMesh, textHexColor: fontColor + '' })
     this.scene.add(fontMesh)
     return fontMesh
-  }
-
-  convert0to1ToHex = (color: { r: number, g: number, b: number } = { r: 0.4, g: 0.4, b: 0.4 }): string => {
-    const rHex: string = Math.floor((color.r * 256)).toString(16)
-    const gHex: string = Math.floor(color.g * 256).toString(16)
-    const bHex: string = Math.floor(color.b * 256).toString(16)
-    return rHex + gHex + bHex
-  }
-
-  convertHexTo0to1 = (hex: string) => {
-    return {
-      r: parseInt(hex.slice(0, 2), 16) / 255,
-      g: parseInt(hex.slice(2, 4), 16) / 255,
-      b: parseInt(hex.slice(4, 6), 16) / 255
-    }
   }
 
   animate = () => {
