@@ -21,6 +21,7 @@ export class TextMeshService {
   }
 
   textsMeshAndColor: { textMesh: Mesh, districtMesh: Mesh, textHexColor: string }[]
+  enableDimension: { height: boolean, tone: boolean } = { height: true, tone: true }
 
   paintMapTextFromMesh = (hoverMesh: Mesh) => {
     const textAboveMesh = this.textsMeshAndColor.filter(text => text.textMesh.name.includes(hoverMesh.name))
@@ -43,12 +44,12 @@ export class TextMeshService {
     this.textsMeshAndColor.forEach(textMesh => this.meshUtilService.transparentMesh(textMesh.textMesh))
   }
 
-  setupDimensionText = (requireDimension: { height: boolean, tone: boolean }, mapInfo: MapInfoInFirebase) => {
-    requireDimension.height = mapInfo.requireHeightDimension === "true" ? true : false
-    requireDimension.tone = mapInfo.requireToneDimension === "true" ? true : false
+  setupDimensionText = (mapInfo: MapInfoInFirebase) => {
+    this.enableDimension.height = mapInfo.requireHeightDimension === "true" ? true : false
+    this.enableDimension.tone = mapInfo.requireToneDimension === "true" ? true : false
   }
 
-  setupAndAnimateTexts = (camera:PerspectiveCamera, orbitcontrols:OrbitControls, scene:Scene, requireDimension: { height: boolean, tone: boolean }, taiwanMap:Object3D, meshesData:DistrictMeshData[]) => {
+  setupAndAnimateTexts = (camera:PerspectiveCamera, orbitcontrols:OrbitControls, scene:Scene, taiwanMap:Object3D, meshesData:DistrictMeshData[]) => {
     const maxToneMesh = this.getExtremumMesh(taiwanMap, 'max', 'tone', meshesData);
     const minToneMesh = this.getExtremumMesh(taiwanMap, 'min', 'tone', meshesData);
     const maxHeightMesh = this.getExtremumMesh(taiwanMap, 'max', 'height', meshesData);
@@ -63,7 +64,7 @@ export class TextMeshService {
 
       let maxHeightMeshGroup: Group
       // let minHeightMeshGroup: Group
-      if (requireDimension.height) {
+      if (this.enableDimension.height) {
         const maxHeightTitleMesh = this.createTextMesh(font, maxHeightMesh.mesh3d, maxHeightMesh.zhDistrictName, maxHeightMesh.rgbColor)
         // const minHeightTitleMesh = this.createTextMesh(font, minHeightMesh.mesh3d, minHeightMesh.zhDistrictName, minHeightMesh.rgbColor)
         const maxHeightSubtitleMesh = this.createTextMesh(font, maxHeightMesh.mesh3d, `最高 ${Math.round(+maxHeightMesh.height * 10) / 10}`, maxHeightMesh.rgbColor)
@@ -83,7 +84,7 @@ export class TextMeshService {
 
       let maxToneMeshGroup: Group
       let minToneMeshGroup: Group
-      if (requireDimension.tone) {
+      if (this.enableDimension.tone) {
         const maxToneTitleMesh = this.createTextMesh(font, maxToneMesh.mesh3d, maxToneMesh.zhDistrictName, maxToneMesh.rgbColor)
         const minToneTitleMesh = this.createTextMesh(font, minToneMesh.mesh3d, minToneMesh.zhDistrictName, minToneMesh.rgbColor)
         const maxToneSubtitleMesh = this.createTextMesh(font, maxToneMesh.mesh3d, `最高 ${Math.round(+maxToneMesh.tone * 10) / 10}`, maxToneMesh.rgbColor)

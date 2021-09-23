@@ -46,7 +46,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   showPopup: boolean = false;
   toneColor: { maxHex: string, minHex: string } = { maxHex: 'EEF588', minHex: '70a7f3' }
   units: { tone: string, height: string } = { tone: '溫', height: '降雨量' }
-  dimensionRequirement: { height: boolean, tone: boolean } = { height: true, tone: true }
   toneExtremum: { max: number, min: number } = { max: 0, min: 0 }
   dbList: AngularFireList<any>
   sumHeight: number;
@@ -57,7 +56,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     private weatherService: WeatherService,
     private db: AngularFireDatabase,
     private route: ActivatedRoute,
-    private imageProcess: ImageProcessingService,
     private colorUtil: ColorUtilService,
     private cloudService: CloudService,
     private meshUtilService: MeshUtilService,
@@ -396,7 +394,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   setUpTaiwan3dModel = () => {
     const loader = new GLTFLoader()
     return loader.loadAsync(this.weatherService.addBaseUrl('/assets/taiwam15.gltf'))
-
   }
 
   setupMap = (mapId?: string) => {
@@ -406,7 +403,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       // google sheet 資料
       this.weatherService.getMapDataFromFirebase(mapId).subscribe(mapData => {
         this.setupTone(mapData)
-        this.textMeshService.setupDimensionText(this.dimensionRequirement, mapData)
+        this.textMeshService.setupDimensionText(mapData)
         const googleSheetId = this.weatherService.getGoogleSheetIdFromUrl(mapData.sourceUrl)
         this.weatherService.getGoogleSheetInfo(googleSheetId).subscribe(graphData => {
           this.generateMap(graphData)
@@ -438,7 +435,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.toneExtremum = this.getToneExtremum(this.meshesData)
     this.sumHeight = this.getSumHeight(this.meshesData)
     this.setupMapMesh(gltf.scene)
-    this.textMeshService.setupAndAnimateTexts(this.camera, this.orbitcontrols, this.scene, this.dimensionRequirement, this.taiwanMap, this.meshesData)
+    this.textMeshService.setupAndAnimateTexts(this.camera, this.orbitcontrols, this.scene, this.taiwanMap, this.meshesData)
     this.animateDistrictsHeight()
     this.scene.add(gltf.scene)
   }
@@ -473,8 +470,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     });
   }
 
-  
-
   getToneExtremum = (meshesData: DistrictMeshData[]): { max: number, min: number } => {
     const sortedMesh = meshesData.sort((a, b) => +b.tone - +a.tone)
     return { max: sortedMesh[0].tone, min: sortedMesh[sortedMesh.length - 1].tone }
@@ -484,12 +479,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     let sum = 0
     meshesData.forEach(mesh => sum += mesh.height)
     return sum
-  }
-
-  
-
-  faceCamera = (objects: Object3D[]) => {
-    objects.forEach(object => object.lookAt(this.camera.position))
   }
 
   animate = () => {
