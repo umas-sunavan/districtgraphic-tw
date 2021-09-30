@@ -58,7 +58,7 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
   ngOnInit(): void {
     this.route.paramMap.subscribe(paramMap => {
       const mapId = paramMap.get('id')
-      if (mapId) {
+      if (mapId && mapId !== 'weather') {
         this.weatherService.getMapDataFromFirebase(mapId).subscribe(mapData => {
           this.author = mapData.author
           this.mapName = mapData.mapName

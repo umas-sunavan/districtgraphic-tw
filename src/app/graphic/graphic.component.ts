@@ -211,9 +211,8 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.toggleCloud(true)
     mapMeshes.traverse(object3d => {
       if ((<Mesh>object3d).isMesh) {
+        this.meshUtilService.transparentMeshes(mapMeshes, 1)
         this.paintMeshFrom(this.meshesData, <Mesh>object3d);
-        // @ts-ignore
-        (<Mesh>object3d).material.opacity = 1
       }
     })
     this.textMeshService.paintColorOnMapText()

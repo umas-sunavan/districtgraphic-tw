@@ -34,9 +34,14 @@ export class MeshUtilService {
   transparentMesh = (mesh: Mesh, opacity: number = 0.6) => {
     if (mesh.isMesh) {
       const currentMaterial: Material = (<Material>mesh.material)
-      // @ts-ignore
-      currentMaterial.color = { r: 1, g: 1, b: 1 };
-      currentMaterial.opacity = opacity
+      if (opacity === 1) {
+        currentMaterial.transparent = false
+      } else {
+        currentMaterial.transparent = true
+        // @ts-ignore
+        currentMaterial.color = { r: 1, g: 1, b: 1 };
+        currentMaterial.opacity = opacity
+      }
     }
   }
 }
