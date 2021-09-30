@@ -111,7 +111,7 @@ export class TextMeshService {
 
   animateText = (fontMesh: Mesh | Group, meshData: DistrictMeshData, meshesData:DistrictMeshData[]) => {
     const [highestRainning, lowestRainning] = this.getHeightRange(meshesData)
-    const normalizedScale = (+meshData.height - lowestRainning) / (highestRainning - lowestRainning);
+    const normalizedScale = (+meshData.height - lowestRainning) / (highestRainning - lowestRainning) || 0;
     const from = { scaleY: 1 }
     const to = { scaleY: normalizedScale * 20 + 1 }
     gsap.to(from, {

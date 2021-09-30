@@ -159,7 +159,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     }
   }
 
-  setCloudDisplay = (shouldShow: boolean) => {
+  toggleCloud = (shouldShow: boolean) => {
     const isShowing = this.scene.children.find(mesh => mesh.name === this.cloud?.name)
     if (!this.cloud) return
     if (shouldShow && !isShowing) {
@@ -191,7 +191,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
   onMouseHoveringLand = (mapMeshes: Object3D, intersactions: Intersection[]) => {
     this.meshUtilService.transparentMeshes(mapMeshes)
-    this.setCloudDisplay(false)
+    this.toggleCloud(false)
     this.textMeshService.transparentTextMesh()
     const nearestToCamera: Intersection = intersactions.sort((a, b) => a.distance - b.distance)[0]
     const meshOnHover = <Mesh>nearestToCamera.object
@@ -208,7 +208,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   onMouseLeavingLand = (mapMeshes: Object3D) => {
-    this.setCloudDisplay(true)
+    this.toggleCloud(true)
     mapMeshes.traverse(object3d => {
       if ((<Mesh>object3d).isMesh) {
         this.paintMeshFrom(this.meshesData, <Mesh>object3d);
@@ -369,7 +369,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     for (let i = 0; i < this.meshesData.length; i++) {
       const height = this.meshesData[i].height || 0
       const from = { scaleY: 1 }
-      const normalizedScale = (+height - minHeight) / (maxHeight - minHeight);
+      const normalizedScale = (+height - minHeight) / (maxHeight - minHeight) || 0;
       const to = { scaleY: normalizedScale * 20 + 1 }
       const districtMeshAnimation =
         gsap.to(
