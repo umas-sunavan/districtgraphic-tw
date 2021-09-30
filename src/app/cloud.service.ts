@@ -25,9 +25,13 @@ export class CloudService {
 
   initCloudMesh = async () => {
     return new Promise<Mesh>(async resolve => {
-      const next = await this.getCloudImage().toPromise()
-      const int8Array = new Uint8ClampedArray(next)
-      const base64String = btoa(String.fromCharCode(...int8Array))
+      const arrayBuffer = await this.getCloudImage().toPromise()
+      const int8Array = new Uint8ClampedArray(arrayBuffer)
+      let bindaryString = ''
+      for (let i = 0; i < int8Array.length; i++) {
+        bindaryString+=String.fromCharCode( int8Array[i] );
+      }
+      const base64String = btoa(bindaryString)
       const img = new Image()
       const context = this.imageProcess.createCanvasContext()
       img.onload = () => {
