@@ -397,23 +397,35 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
   setupMap = (mapId?: string) => {
     console.log(mapId);
-
-    if (mapId && mapId !== 'weather') {
-      // google sheet 資料
-      this.weatherService.getMapDataFromFirebase(mapId).subscribe(mapData => {
-        this.setupTone(mapData)
-        this.textMeshService.setupDimensionText(mapData)
-        const googleSheetId = this.weatherService.getGoogleSheetIdFromUrl(mapData.sourceUrl)
-        this.weatherService.getGoogleSheetInfo(googleSheetId).subscribe(graphData => {
+    if(!mapId) throw new Error("no mapId");
+    
+    switch (mapId) {
+      case 'weather':
+        // weather 資料
+        this.weatherService.getWeatherInfo().subscribe(graphData => {
+          // gltf.scene.position.set(0, 0, this.move)
           this.generateMap(graphData)
+        });
+        break;
+      case 'cloud':
+        // 雲圖 資料
+        // this.weatherService.getWeatherStatus().subscribe(graphData => {
+          
+          
+        // });
+        break;
+
+      default:
+        // google sheet 資料
+        this.weatherService.getMapDataFromFirebase(mapId).subscribe(mapData => {
+          this.setupTone(mapData)
+          this.textMeshService.setupDimensionText(mapData)
+          const googleSheetId = this.weatherService.getGoogleSheetIdFromUrl(mapData.sourceUrl)
+          this.weatherService.getGoogleSheetInfo(googleSheetId).subscribe(graphData => {
+            this.generateMap(graphData)
+          })
         })
-      })
-    } else {
-      // weather 資料
-      this.weatherService.getWeatherInfo().subscribe(graphData => {
-        // gltf.scene.position.set(0, 0, this.move)
-        this.generateMap(graphData)
-      });
+        break;
     }
   }
 
@@ -445,7 +457,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   setupMapMesh = (scene: Group) => {
-    const mapMaterial = new MeshPhongMaterial({ opacity: 1.0, transparent: false})
+    const mapMaterial = new MeshPhongMaterial({ opacity: 1.0, transparent: false })
     const [maxTone, minTone] = this.getToneRange(this.meshesData)
     this.taiwanMap = scene;
     scene.traverse(object3d => {

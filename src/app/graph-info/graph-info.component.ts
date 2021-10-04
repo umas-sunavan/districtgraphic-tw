@@ -48,7 +48,7 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
   @Input('mouseHoverDetalessMesh') mouseHoverDetalessMesh: boolean = false
   @Input('mouseHoveAnyMesh') mouseHoveAnyMesh: boolean = false
   @Input('meshDataOnHtml') meshDataOnHtml?: DistrictMeshData;
-  @Input('toneExtremum') toneExtremum: { max: number, min: number} = { max: 0, min: 0}
+  @Input('toneExtremum') toneExtremum: { max: number, min: number } = { max: 0, min: 0 }
   @Input('sumHeight') sumHeight: number = 0
 
   @Output() updateMapBySheetId = new EventEmitter<string>()
@@ -57,23 +57,34 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(paramMap => {
-      const mapId = paramMap.get('id')
-      if (mapId && mapId !== 'weather') {
-        this.weatherService.getMapDataFromFirebase(mapId).subscribe(mapData => {
-          this.author = mapData.author
-          this.mapName = mapData.mapName
-          this.heightDimensionTitle = mapData.HeightDimensionTitle
-          this.heightDimensionUnit = mapData.HeightDimensionUnit
-          this.toneDimensionTitle = mapData.ToneDimensionTitle
-          this.toneDimensionUnit = mapData.ToneDimensionUnit
-          this.requireHeightDimension = mapData.requireHeightDimension === "true" ? true : false
-          this.requireToneDimension = mapData.requireToneDimension === "true" ? true : false
-          this.mapDescription = mapData.mapDescription
-          this.sourceUrl = mapData.sourceUrl
-          this.toneGradient = { startColor: mapData.MinToneHex, endColor: mapData.MaxToneHex}
-          this.isWeatherMap = false
-          console.log(mapData, this.mapDescription);
-        })
+      const mapId = paramMap.get('id') || ''
+      switch (mapId) {
+        case 'weather':
+        console.log('weather');
+        
+          break;
+        case 'cloud':
+        console.log('cloud!');
+        
+          break;
+
+        default:
+          this.weatherService.getMapDataFromFirebase(mapId).subscribe(mapData => {
+            this.author = mapData.author
+            this.mapName = mapData.mapName
+            this.heightDimensionTitle = mapData.HeightDimensionTitle
+            this.heightDimensionUnit = mapData.HeightDimensionUnit
+            this.toneDimensionTitle = mapData.ToneDimensionTitle
+            this.toneDimensionUnit = mapData.ToneDimensionUnit
+            this.requireHeightDimension = mapData.requireHeightDimension === "true" ? true : false
+            this.requireToneDimension = mapData.requireToneDimension === "true" ? true : false
+            this.mapDescription = mapData.mapDescription
+            this.sourceUrl = mapData.sourceUrl
+            this.toneGradient = { startColor: mapData.MinToneHex, endColor: mapData.MaxToneHex }
+            this.isWeatherMap = false
+            console.log(mapData, this.mapDescription);
+          })
+          break;
       }
     })
   }
@@ -86,15 +97,15 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
     this.showBrowseMapsPopup = !this.showBrowseMapsPopup;
     btn.blur()
     this.weatherService.getAllMapsFromFirebase().subscribe(maps => {
-      this.allMaps = maps.map(map => {
-        map.createDate = new Date(map.createDate)
-        console.log(map.createDate);
-
-        return map
-      })
+      maps = this.appendDate(maps)
+      this.allMaps = maps
     })
   }
 
+  appendDate = (maps: MapInfoInFirebase[]) => maps.map(map => {
+    map.createDate = new Date(map.createDate)
+    return map
+  })
 
   clickMapLink = (mapId: string) => {
     this.router.navigate(['/maps', mapId]);
