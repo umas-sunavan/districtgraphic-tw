@@ -130,7 +130,8 @@ export interface MapInfoInFirebase {
   createDate: any;
   requireHeightDimension:string | null
   requireToneDimension:string | null
-  mapDescription:string
+  mapDescription:string;
+  liveStream?:string
 }
 
   export interface MapAttributeForm {

@@ -6086,8 +6086,34 @@ export class WeatherService {
   }
 
   getAllMapsFromFirebase = (): Observable<MapInfoInFirebase[]> => {
-    return <Observable<MapInfoInFirebase[]>>this.db.list('maps').valueChanges()
+    return <Observable<MapInfoInFirebase[]>>this.db.list('maps').valueChanges().pipe(
+      this.addWeatherMap()
+    )
   }
+
+  addWeatherMap = () => map((maps:any[]):MapInfoInFirebase[] => {
+    const weatherInfo:MapInfoInFirebase = {
+      HeightDimensionTitle: '今日降雨量',
+      HeightDimensionUnit: '毫米',
+      MaxToneHex: 'EEF588',
+      MinToneHex: '70a7f3',
+      ToneDimensionTitle: '本日最高溫',
+      ToneDimensionUnit: '度C',
+      author: '伍瑪斯',
+      authorEmail: 'fareastsunflower@gmail.com',
+      mapName: '台灣天氣資訊地圖',
+      mapUrl: 'weather',
+      sourceData: 'https://opendata.cwb.gov.tw/dist/opendata-swagger.html',
+      sourceUrl: 'https://opendata.cwb.gov.tw/dist/opendata-swagger.html',
+      createDate: new Date('2021/05/01'),
+      requireHeightDimension: 'true',
+      requireToneDimension: 'true',
+      mapDescription: "透過氣象局Opendata，能夠取得每小時更新一次的氣象資料\n顏色代表每小時最高溫度，高度代表每小時降雨量\n資料來源是氣象局提供的資料唷！",
+      liveStream: 'true'
+    }
+    maps.push(weatherInfo)
+    return maps
+  })
 
   convertWeatherApiToDistrictGraphData = map((next: WeatherData): DistrictGraphData[] => {
     return next.records.location.map(station => {

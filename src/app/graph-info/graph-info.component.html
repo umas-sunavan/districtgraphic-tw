@@ -341,58 +341,6 @@
             </button>
         </div>
         <div class="pe-0 pe-sm-4 list-container">
-            <a (click)="clickMapLink('weather')" 
-                class="mb-4 border-0 align-items-stretch rounded-theme d-flex flex-column flex-sm-row bg-white p-4"
-                style="text-decoration: none;">
-                <div type="button" class="me-3 tone-gradient gradient-selected"
-                    [ngStyle]="{'background-image': 'linear-gradient(to top,#' + toneGradient.startColor + ', #' + toneGradient.endColor + ')'}">
-                </div>
-                <div class="d-flex flex-column me-auto">
-                    <p class="theme-font-m-zh d-flex align-items-center">
-                        即時天氣
-                        <span class="badge live-badge font-size-s d-flex align-items-center ms-2">
-                            即時更新
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ms-2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
-                        </span>
-                    </p>
-                    <p class="theme-font-s-zh">包含 日累積雨量、最高溫度 資料</p>
-                </div>
-                <div class="d-flex flex-column justify-content-end text-start text-sm-end">
-                    <p class="theme-font-s-zh">伍瑪斯 製作</p>
-                </div>
-                <div class="align-items-center px-2 d-none d-sm-flex">
-                    <svg width="25" height="25" viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M9.84131 18.9644L15.8413 12.9644L9.84131 6.96439" stroke="#0088DC"
-                            stroke-opacity="0.69" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                </div>
-            </a>
-            <a (click)="clickMapLink('cloud')" 
-                class="mb-4 border-0 align-items-stretch rounded-theme d-flex flex-column flex-sm-row bg-white p-4"
-                style="text-decoration: none;">
-                <div type="button" class="me-3 tone-gradient gradient-selected"
-                    [ngStyle]="{'background-image': 'linear-gradient(to top,#' + toneGradient.startColor + ', #' + toneGradient.endColor + ')'}">
-                </div>
-                <div class="d-flex flex-column me-auto">
-                    <p class="theme-font-m-zh d-flex align-items-center">
-                        即時雲量分布
-                        <span class="badge live-badge font-size-s d-flex align-items-center ms-2">
-                            即時更新
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ms-2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
-                        </span>
-                    </p>
-                    <p class="theme-font-s-zh">包含 天氣現象、雲圖、降雨機率 資料</p>
-                </div>
-                <div class="d-flex flex-column justify-content-end text-start text-sm-end">
-                    <p class="theme-font-s-zh">伍瑪斯 製作</p>
-                </div>
-                <div class="align-items-center px-2 d-none d-sm-flex">
-                    <svg width="25" height="25" viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M9.84131 18.9644L15.8413 12.9644L9.84131 6.96439" stroke="#0088DC"
-                            stroke-opacity="0.69" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                </div>
-            </a>
             <a (click)="clickMapLink(map.mapUrl)" *ngFor="let map of allMaps"
                 class="mb-4 border-0 align-items-stretch rounded-theme d-flex flex-column flex-sm-row bg-white p-4"
                 style="text-decoration: none;">
@@ -400,7 +348,13 @@
                     [ngStyle]="{'background-image': 'linear-gradient(to top,#' + map.MaxToneHex + ', #' + map.MinToneHex + ')'}">
                 </div>
                 <div class="d-flex flex-column me-auto">
-                    <p class="theme-font-m-zh">{{map.mapName}}</p>
+                    <p class="theme-font-m-zh d-flex align-items-center">
+                        {{map.mapName}}
+                        <span *ngIf="map.liveStream" class="badge live-badge font-size-s d-flex align-items-center ms-2">
+                            即時更新
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ms-2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                        </span>
+                    </p>
                     <p class="theme-font-s-zh">包含
                         {{map.ToneDimensionTitle ? map.ToneDimensionTitle + '、' : ''}}
                         {{map.HeightDimensionTitle}}
