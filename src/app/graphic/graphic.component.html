@@ -3,7 +3,7 @@
             [mouseHoverDetalessMesh]="mouseHoverDetalessMesh"
             [mouseHoveAnyMesh]="mouseHoverAnyMesh"
             [meshDataOnHtml]="meshDataOnHtml"
-            (updateMapBySheetId)="setupMap($event)"
+            (onMapChanged)="setupMap($event)"
             (blurGraph)="blurCanvas()"
             [toneExtremum]="toneExtremum"
             [sumHeight]="sumHeight"

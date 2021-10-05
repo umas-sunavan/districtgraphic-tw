@@ -44,9 +44,14 @@ export class TextMeshService {
     this.textsMeshAndColor.forEach(textMesh => this.meshUtilService.transparentMesh(textMesh.textMesh))
   }
 
-  setupDimensionText = (mapInfo: MapInfoInFirebase) => {
-    this.enableDimension.height = mapInfo.requireHeightDimension === "true" ? true : false
-    this.enableDimension.tone = mapInfo.requireToneDimension === "true" ? true : false
+  enableDimensionText = (mapInfo?: MapInfoInFirebase) => {
+    if(mapInfo) {
+      this.enableDimension.height = mapInfo.requireHeightDimension === "true" ? true : false
+      this.enableDimension.tone = mapInfo.requireToneDimension === "true" ? true : false
+    } else {
+      this.enableDimension.height = true
+      this.enableDimension.tone = true
+    }
   }
 
   setupAndAnimateTexts = (camera:PerspectiveCamera, orbitcontrols:OrbitControls, scene:Scene, taiwanMap:Object3D, meshesData:DistrictMeshData[]) => {

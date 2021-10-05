@@ -341,7 +341,7 @@
             </button>
         </div>
         <div class="pe-0 pe-sm-4 list-container">
-            <a
+            <a (click)="clickMapLink('weather')" 
                 class="mb-4 border-0 align-items-stretch rounded-theme d-flex flex-column flex-sm-row bg-white p-4"
                 style="text-decoration: none;">
                 <div type="button" class="me-3 tone-gradient gradient-selected"
@@ -367,7 +367,7 @@
                     </svg>
                 </div>
             </a>
-            <a
+            <a (click)="clickMapLink('cloud')" 
                 class="mb-4 border-0 align-items-stretch rounded-theme d-flex flex-column flex-sm-row bg-white p-4"
                 style="text-decoration: none;">
                 <div type="button" class="me-3 tone-gradient gradient-selected"

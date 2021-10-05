@@ -397,21 +397,23 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
   setupMap = (mapId?: string) => {
     console.log(mapId);
-    if(!mapId) throw new Error("no mapId");
-    
+    if (!mapId) throw new Error("no mapId");
+
     switch (mapId) {
       case 'weather':
         // weather 資料
         this.weatherService.getWeatherInfo().subscribe(graphData => {
           // gltf.scene.position.set(0, 0, this.move)
+          this.resetTone()
+          this.textMeshService.enableDimensionText()
           this.generateMap(graphData)
         });
         break;
       case 'cloud':
         // 雲圖 資料
         // this.weatherService.getWeatherStatus().subscribe(graphData => {
-          
-          
+
+
         // });
         break;
 
@@ -419,7 +421,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         // google sheet 資料
         this.weatherService.getMapDataFromFirebase(mapId).subscribe(mapData => {
           this.setupTone(mapData)
-          this.textMeshService.setupDimensionText(mapData)
+          this.textMeshService.enableDimensionText(mapData)
           const googleSheetId = this.weatherService.getGoogleSheetIdFromUrl(mapData.sourceUrl)
           this.weatherService.getGoogleSheetInfo(googleSheetId).subscribe(graphData => {
             this.generateMap(graphData)
@@ -434,6 +436,11 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.toneColor.minHex = mapInfo.MinToneHex
     this.units.height = mapInfo.HeightDimensionUnit
     this.units.tone = mapInfo.ToneDimensionUnit
+  }
+
+  resetTone = () => {
+    this.toneColor = { maxHex: 'EEF588', minHex: '70a7f3' }
+    this.units = { tone: '溫', height: '降雨量' }
   }
 
   generateMap = (graphData: DistrictGraphData[]) => {
@@ -452,9 +459,12 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   setupMeshData = (graphData: DistrictGraphData[]) => {
+    this.resetMeshData()
     this.meshesData = this.createMeshesData(graphData)
     this.meshesData = this.assignMeshesdEnName(this.meshesData)
   }
+
+  resetMeshData = () => { this.meshesData = [] }
 
   setupMapMesh = (scene: Group) => {
     const mapMaterial = new MeshPhongMaterial({ opacity: 1.0, transparent: false })
@@ -475,6 +485,9 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         } else {
           // @ts-ignore
           mesh.material.color = { r: 1, g: 1, b: 1 }
+          console.log(mesh.scale);
+          mesh.scale.setY(1)
+          mesh.position.setY(0.5)
         }
       }
     });

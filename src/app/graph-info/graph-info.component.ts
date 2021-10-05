@@ -51,7 +51,7 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
   @Input('toneExtremum') toneExtremum: { max: number, min: number } = { max: 0, min: 0 }
   @Input('sumHeight') sumHeight: number = 0
 
-  @Output() updateMapBySheetId = new EventEmitter<string>()
+  @Output() onMapChanged = new EventEmitter<string>()
   @Output() blurGraph = new EventEmitter<boolean>()
 
 
@@ -109,7 +109,7 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
 
   clickMapLink = (mapId: string) => {
     this.router.navigate(['/maps', mapId]);
-    this.updateMapBySheetId.emit(mapId)
+    this.onMapChanged.emit(mapId)
     this.blurGraph.emit(false)
     this.showBrowseMapsPopup = !this.showBrowseMapsPopup;
   }
@@ -147,7 +147,7 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
       this.router.navigate(['/maps', mapId]);
       this.weatherService.setMapRefAsUrlToFirebase(pushedMapRef, mapId)
       this.shareLink = window.location.origin + this.weatherService.addBaseUrl('') + 'maps/' + mapId
-      this.updateMapBySheetId.emit(mapId)
+      this.onMapChanged.emit(mapId)
     }
   }
 
