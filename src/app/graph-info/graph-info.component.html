@@ -341,7 +341,7 @@
             </button>
         </div>
         <div class="pe-0 pe-sm-4 list-container">
-            <a [routerLink]="['/maps', 'weather']"
+            <a
                 class="mb-4 border-0 align-items-stretch rounded-theme d-flex flex-column flex-sm-row bg-white p-4"
                 style="text-decoration: none;">
                 <div type="button" class="me-3 tone-gradient gradient-selected"
@@ -367,7 +367,7 @@
                     </svg>
                 </div>
             </a>
-            <a [routerLink]="['/maps', 'cloud']"
+            <a
                 class="mb-4 border-0 align-items-stretch rounded-theme d-flex flex-column flex-sm-row bg-white p-4"
                 style="text-decoration: none;">
                 <div type="button" class="me-3 tone-gradient gradient-selected"
@@ -393,7 +393,7 @@
                     </svg>
                 </div>
             </a>
-            <a [routerLink]="['/maps', map.mapUrl]" (click)="clickMapLink(map.mapUrl)" *ngFor="let map of allMaps"
+            <a (click)="clickMapLink(map.mapUrl)" *ngFor="let map of allMaps"
                 class="mb-4 border-0 align-items-stretch rounded-theme d-flex flex-column flex-sm-row bg-white p-4"
                 style="text-decoration: none;">
                 <div type="button" class="me-3 tone-gradient gradient-selected"
