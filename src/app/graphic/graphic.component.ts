@@ -459,12 +459,17 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   setupMeshData = (graphData: DistrictGraphData[]) => {
-    this.resetMeshData()
+    this.resetMeshAppearence(this.meshesData)
     this.meshesData = this.createMeshesData(graphData)
     this.meshesData = this.assignMeshesdEnName(this.meshesData)
   }
 
-  resetMeshData = () => { this.meshesData = [] }
+  resetMeshAppearence = (meshesData: DistrictMeshData[]) => {
+    meshesData.map(meshData => {
+      meshData.height = 0
+      meshData.tone = 0
+    })
+  }
 
   setupMapMesh = (scene: Group) => {
     const mapMaterial = new MeshPhongMaterial({ opacity: 1.0, transparent: false })
@@ -479,15 +484,11 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         if (meshData) {
           // 這邊因為有複數的資料，如果有兩個重複的鄉鎮市區資料，那麼地圖會抓到第一個，然後染色。第二個鄉鎮市區資料則不會染色。當mousemove抓到之後染色時就抓不到資料
           meshData.rgbColor = this.getMaterialColorByRate(maxTone, minTone, meshData.tone);
-          // @ts-ignore
-          mesh.material.color = meshData.rgbColor
+          this.meshUtilService.paintMesh(mesh, meshData.rgbColor)
           meshData.mesh3d = mesh
         } else {
-          // @ts-ignore
-          mesh.material.color = { r: 1, g: 1, b: 1 }
-          console.log(mesh.scale);
-          mesh.scale.setY(1)
-          mesh.position.setY(0.5)
+          this.meshUtilService.resetMeshGeometry(mesh)
+          this.meshUtilService.paintMesh(mesh, {r:1, g:1, b:1})
         }
       }
     });

@@ -44,4 +44,14 @@ export class MeshUtilService {
       }
     }
   }
+
+  paintMesh = (mesh: Mesh, color: { r:number, g:number, b:number }) => {
+    // @ts-ignore
+    mesh.material.color = color
+  }
+
+  resetMeshGeometry = (mesh: Mesh) => {
+    mesh.scale.setY(1)
+    mesh.position.setY(0.5)
+  }
 }
