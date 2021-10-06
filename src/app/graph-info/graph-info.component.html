@@ -29,16 +29,18 @@
                 </div>
                 <div [ngClass]="requireToneDimension ? '' : 'd-none'">
                     <small class="zh font-size-s">{{toneDimensionTitle}}</small>
-                    <div class="align-items-baseline  d-flex">
-                        <h3 class="en font-size-l pe-1">{{this.meshDataOnHtml.tone | number: '1.1-1'}}</h3>
-                        <small class="zh font-size-s">{{toneDimensionUnit}}</small>
+                    <div class="align-items-baseline" [ngClass]="{'d-flex' : mapId !== 'cloud'}">
+                        <h3 *ngIf="mapId === 'cloud'" class="en font-size-l pe-1" >{{readCouldCode('title')}}</h3>
+                        <small *ngIf="mapId === 'cloud'">{{readCouldCode('subtitle')}}</small>
+                        <h3 class="en font-size-l pe-1" *ngIf="mapId !== 'cloud'">{{this.meshDataOnHtml.tone | number: '1.1-1'}}</h3>
+                        <small class="zh font-size-s" *ngIf="mapId !== 'cloud'">{{toneDimensionUnit}}</small>
                     </div>
                 </div>
             </div>
         </div>
         <div [ngStyle]="{'color': '#666666', display: mouseHoverDetalessMesh && mouseHoveAnyMesh ? 'flex':'none'}"
             class="flex-column">
-            <h3 class="zh font-size-m">無該區資料</h3>
+            <h3 class="zh font-size-m">無觀測站資料</h3>
             <h3 class="en font-size-s">No Information In This District.</h3>
         </div>
         <div [ngStyle]="{'color': '#666666', display: mouseHoveAnyMesh  ? 'none':'flex'}" class="flex-column">

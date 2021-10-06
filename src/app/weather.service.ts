@@ -6022,6 +6022,21 @@ export class WeatherService {
     )
   }
 
+  getCloudReport = (): Observable<DistrictGraphData[]> => {
+    const params = new HttpParams()
+    .append('Authorization', 'CWB-58C1E113-D5B9-45A0-9295-BB080D302D68')
+    .append('elementName', 'Weather')
+    .append('elementName', 'H_UVI')
+    return this.httpclient.get<WeatherData>('https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0003-001', { params: params }).pipe(
+      this.convertCloudReportToDistrictGraphData,
+      this.filterMalfunctionStation,
+      this.averageHeightInDuplicateDistrict,
+      this.averageToneInDuplicateDistrict,
+      this.filterDuplicatedDistrict,
+    )
+  
+  }
+
   averageHeightInDuplicateDistrict = map((districts: DistrictGraphData[]): DistrictGraphData[] => {
     const recordDistricts: DistrictGraphData[] = []
     districts.map(currentDistrict => {
@@ -6080,14 +6095,18 @@ export class WeatherService {
   }
 
   getMapDataFromFirebase = (mapId: string): Observable<MapInfoInFirebase> => {
-    return this.db.list('maps').valueChanges().pipe(map((mapsInfo: any[]): MapInfoInFirebase => {
+    return this.db.list('maps').valueChanges().pipe(
+      this.addWeatherMap(),
+      this.addCloudMap(),
+      map((mapsInfo: any[]): MapInfoInFirebase => {
       return (<MapInfoInFirebase[]>mapsInfo).filter(map => map.mapUrl === mapId)[0]
     }))
   }
 
   getAllMapsFromFirebase = (): Observable<MapInfoInFirebase[]> => {
     return <Observable<MapInfoInFirebase[]>>this.db.list('maps').valueChanges().pipe(
-      this.addWeatherMap()
+      this.addWeatherMap(),
+      this.addCloudMap()
     )
   }
 
@@ -6115,6 +6134,30 @@ export class WeatherService {
     return maps
   })
 
+  addCloudMap = () => map((maps:any[]):MapInfoInFirebase[] => {
+    const weatherInfo:MapInfoInFirebase = {
+      HeightDimensionTitle: '天氣現象',
+      HeightDimensionUnit: '',
+      MaxToneHex: 'EEF588',
+      MinToneHex: '70a7f3',
+      ToneDimensionTitle: '雲量分布',
+      ToneDimensionUnit: '',
+      author: '伍瑪斯',
+      authorEmail: 'fareastsunflower@gmail.com',
+      mapName: '台灣即時雲圖',
+      mapUrl: 'cloud',
+      sourceData: 'https://opendata.cwb.gov.tw/dist/opendata-swagger.html',
+      sourceUrl: 'https://opendata.cwb.gov.tw/dist/opendata-swagger.html',
+      createDate: new Date('2021/10/05'),
+      requireHeightDimension: 'false',
+      requireToneDimension: 'true',
+      mapDescription: "透過氣象局Opendata，能夠取得每小時更新一次的氣象資料\n顏色代表每小時最高溫度，高度代表每小時降雨量\n資料來源是氣象局提供的資料唷！",
+      liveStream: 'true'
+    }
+    maps.push(weatherInfo)
+    return maps
+  })
+
   convertWeatherApiToDistrictGraphData = map((next: WeatherData): DistrictGraphData[] => {
     return next.records.location.map(station => {
       const rainValue = this.findWeatherValue(station, 'H_24R')
@@ -6126,6 +6169,23 @@ export class WeatherService {
         districtName: district,
         height: +rainValue,
         tone: +topTempValue,
+        meshText: undefined
+      }
+    })
+  })
+
+  convertCloudReportToDistrictGraphData = map((next: WeatherData): DistrictGraphData[] => {
+    return next.records.location.map(station => {
+      const weatherDescription:string = this.findWeatherValue(station, 'Weather')
+      const weatherCode:number = weatherDescription.includes('晴') ? 3 : weatherDescription.includes('多雲') ? 2 : weatherDescription.includes('陰') ? 1 : 0
+      const uvi = this.findWeatherValue(station, 'H_UVI')
+      const district = this.findLocationValue(station, 'TOWN')
+      const city = this.findLocationValue(station, 'CITY')
+      return {
+        cityName: city,
+        districtName: district,
+        height: 0,
+        tone: +weatherCode,
         meshText: undefined
       }
     })

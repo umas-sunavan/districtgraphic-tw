@@ -39,6 +39,7 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
   ]
   gradientSelectedIndex: number = 0
   allMaps: MapInfoInFirebase[] = []
+  mapId = 'weather'
   constructor(
     public weatherService: WeatherService,
     private router: Router,
@@ -58,16 +59,10 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
   ngOnInit(): void {
     this.route.paramMap.subscribe(paramMap => {
       const mapId = paramMap.get('id') || ''
+      this.mapId = mapId
       switch (mapId) {
         case 'weather':
-        console.log('weather');
-        
-          break;
         case 'cloud':
-        console.log('cloud!');
-        
-          break;
-
         default:
           this.weatherService.getMapDataFromFirebase(mapId).subscribe(mapData => {
             this.author = mapData.author
@@ -154,6 +149,16 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
   copyShareLink = (btnElement: HTMLButtonElement, shareLink: string) => {
     btnElement.children[1].innerHTML = "複製成功！"
     navigator.clipboard.writeText(shareLink)
+  }
+
+  readCouldCode = (type: string): string => {
+    if (!this.meshDataOnHtml) return '讀取中'
+    if (type === 'title') {
+      return this.meshDataOnHtml.tone > 2 ? '晴' : this.meshDataOnHtml.tone > 1 ? '多雲' : '陰天'
+    } else if(type === 'subtitle') {
+      console.log('subtitle');
+      return this.meshDataOnHtml.tone > 2 ? '雲量佔天空的0%至10%' : this.meshDataOnHtml.tone > 1 ? '雲量佔天空的10%至30%' : '雲量佔天空的70%以上'
+    } else { return 'Error'}
   }
 
 }

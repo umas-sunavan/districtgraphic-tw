@@ -9,6 +9,8 @@ export class MeshUtilService {
 
   constructor() { }
 
+  defaultMeshColor: {r:number, g:number, b:number} = {r:1, g:1, b:1} 
+
   findMeshFromIndex = (source: Object3D, array: DistrictMeshData[], index: number): Mesh => {
     let retrunMesh: Mesh = new Mesh()
     source.traverse(mesh => {
@@ -39,7 +41,7 @@ export class MeshUtilService {
       } else {
         currentMaterial.transparent = true
         // @ts-ignore
-        currentMaterial.color = { r: 1, g: 1, b: 1 };
+        currentMaterial.color = this.defaultMeshColor;
         currentMaterial.opacity = opacity
       }
     }
@@ -53,5 +55,9 @@ export class MeshUtilService {
   resetMeshGeometry = (mesh: Mesh) => {
     mesh.scale.setY(1)
     mesh.position.setY(0.5)
+  }
+  
+  setDefaultMeshColor = (color: {r:number, g:number, b:number}) => {
+    this.defaultMeshColor = color
   }
 }

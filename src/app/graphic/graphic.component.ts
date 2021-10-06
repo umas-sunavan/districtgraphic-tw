@@ -99,7 +99,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.setupRenderer()
     this.setupCamera()
     this.setupScene()
-    this.initCloud()
     this.setupLight()
     // this.setupBoxForTest()
     this.setUpTaiwan3dModel().then((Taiwan3dModel: GLTF) => {
@@ -358,7 +357,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   getMaterialColorByRate = (highestTemp: number, lowestTemp: number, currentTemp: number): { r: number, g: number, b: number, } => {
-    const colorRate = (currentTemp - highestTemp) / (lowestTemp - highestTemp)
+    const colorRate = (currentTemp - highestTemp) / (lowestTemp - highestTemp)    
     const hashColor = this.colorUtil.blendHexColors('#' + this.toneColor.maxHex, '#' + this.toneColor.minHex, colorRate)
     return this.colorUtil.convertHexTo0to1(hashColor)
   }
@@ -399,12 +398,14 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     console.log(mapId);
     if (!mapId) throw new Error("no mapId");
 
+    this.resetTone()
     switch (mapId) {
       case 'weather':
         // weather 資料
         this.weatherService.getWeatherInfo().subscribe(graphData => {
           // gltf.scene.position.set(0, 0, this.move)
-          this.resetTone()
+          console.log(graphData);
+          
           this.textMeshService.enableDimensionText()
           this.generateMap(graphData)
         });
@@ -412,9 +413,20 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       case 'cloud':
         // 雲圖 資料
         // this.weatherService.getWeatherStatus().subscribe(graphData => {
-
+          this.initCloud()
 
         // });
+        this.weatherService.getCloudReport().subscribe(graphData => {
+          console.log(graphData);
+          
+          // gltf.scene.position.set(0, 0, this.move)
+          this.meshUtilService.setDefaultMeshColor(this.colorUtil.convertHexTo0to1('adcdc2'))
+          console.log(graphData);
+          this.initCloud()
+          this.textMeshService.enableDimensionText()
+          this.generateMap(graphData)
+        });
+
         break;
 
       default:
@@ -474,6 +486,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   setupMapMesh = (scene: Group) => {
     const mapMaterial = new MeshPhongMaterial({ opacity: 1.0, transparent: false })
     const [maxTone, minTone] = this.getToneRange(this.meshesData)
+    console.log(maxTone, minTone);
     this.taiwanMap = scene;
     scene.traverse(object3d => {
       const mesh: Mesh = (<Mesh>object3d)
@@ -482,14 +495,17 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         mesh.receiveShadow = true
         const meshData = this.meshUtilService.findDataByMeshName(this.meshesData, mesh)
         if (meshData) {
+          console.log(meshData.tone);
+          
           // 這邊因為有複數的資料，如果有兩個重複的鄉鎮市區資料，那麼地圖會抓到第一個，然後染色。第二個鄉鎮市區資料則不會染色。當mousemove抓到之後染色時就抓不到資料
           meshData.rgbColor = this.getMaterialColorByRate(maxTone, minTone, meshData.tone);
           this.meshUtilService.paintMesh(mesh, meshData.rgbColor)
-          meshData.mesh3d = mesh
+          meshData.mesh3d = mesh          
         } else {
-          this.meshUtilService.resetMeshGeometry(mesh)
-          this.meshUtilService.paintMesh(mesh, {r:1, g:1, b:1})
+          this.meshUtilService.resetMeshGeometry(mesh)          
+          this.meshUtilService.paintMesh(mesh, this.meshUtilService.defaultMeshColor)
         }
+        
       }
     });
   }
