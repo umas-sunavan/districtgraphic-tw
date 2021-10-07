@@ -406,31 +406,22 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         // weather 資料
         this.weatherService.getWeatherInfo().subscribe(graphData => {
           // gltf.scene.position.set(0, 0, this.move)
-          console.log(graphData);
-          
           this.textMeshService.enableDimensionText()
           this.generateMap(graphData)
         });
         break;
       case 'cloud':
         // 雲圖 資料
-        // this.weatherService.getWeatherStatus().subscribe(graphData => {
-          this.initCloud()
-
-        // });
         this.weatherService.getWeatherForcast().subscribe(graphData => {
-          console.log(graphData);
-          
           // gltf.scene.position.set(0, 0, this.move)
           this.meshUtilService.setDefaultMeshColor(this.colorUtil.convertHexTo0to1('adcdc2'))
-          console.log(graphData);
+          this.initCloud()
           this.initCloud()
           this.textMeshService.enableDimensionText()
           this.generateMap(graphData)
         });
 
         break;
-
       default:
         // google sheet 資料
         this.weatherService.getMapDataFromFirebase(mapId).subscribe(mapData => {

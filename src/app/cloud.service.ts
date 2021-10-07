@@ -70,7 +70,7 @@ export class CloudService {
       // map: alphaTexture,
       alphaMap: alphaTexture,
       displacementMap: heightTexture,
-      displacementScale: -0.1,
+      displacementScale: -0.4,
       side: DoubleSide,
       depthWrite: false
     })
