@@ -11,6 +11,7 @@ import { AngularFireModule } from '@angular/fire';
 import { environment } from '../environments/environment';
 import { AngularFireDatabaseModule } from '@angular/fire/database';
 import { GraphInfoComponent } from './graph-info/graph-info.component';
+import { DashDatePipe } from './dash-date.pipe';
 
 
 @NgModule({
@@ -18,6 +19,7 @@ import { GraphInfoComponent } from './graph-info/graph-info.component';
     AppComponent,
     GraphicComponent,
     GraphInfoComponent,
+    DashDatePipe,
   ],
   imports: [
     BrowserModule,

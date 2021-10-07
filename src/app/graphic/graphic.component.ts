@@ -220,6 +220,8 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   updateTextOnHtml = (intersactions: Intersection[]) => {
     const nearestCamera: Intersection = intersactions.sort((a, b) => a.distance - b.distance)[0]
     this.meshDataOnHtml = this.meshUtilService.findDataByMeshName(this.meshesData, <Mesh>nearestCamera.object)
+    console.log(this.meshDataOnHtml);
+    
   }
 
   updateMousePosiion = (event: MouseEvent): { x: number, y: number } => {
@@ -494,9 +496,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         mesh.material = mapMaterial.clone();
         mesh.receiveShadow = true
         const meshData = this.meshUtilService.findDataByMeshName(this.meshesData, mesh)
-        if (meshData) {
-          console.log(meshData.tone);
-          
+        if (meshData) {          
           // 這邊因為有複數的資料，如果有兩個重複的鄉鎮市區資料，那麼地圖會抓到第一個，然後染色。第二個鄉鎮市區資料則不會染色。當mousemove抓到之後染色時就抓不到資料
           meshData.rgbColor = this.getMaterialColorByRate(maxTone, minTone, meshData.tone);
           this.meshUtilService.paintMesh(mesh, meshData.rgbColor)

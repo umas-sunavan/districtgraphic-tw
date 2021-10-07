@@ -5,6 +5,7 @@ import { DistrictMeshData, MapAttributeForm, MapInfoInFirebase, MapSource, ToneG
 import { WeatherService } from '../weather.service';
 import { Router, ActivatedRoute, ParamMap } from '@angular/router';
 import { calcPossibleSecurityContexts } from '@angular/compiler/src/template_parser/binding_parser';
+import { CloudService } from '../cloud.service';
 
 
 @Component({
@@ -40,10 +41,12 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
   gradientSelectedIndex: number = 0
   allMaps: MapInfoInFirebase[] = []
   mapId = 'weather'
+  cloudLastUpdate = ''
   constructor(
     public weatherService: WeatherService,
     private router: Router,
     private route: ActivatedRoute,
+    private cloudService: CloudService
   ) { }
   @Input('districtColor') htmlTextColor: string = ''
   @Input('mouseHoverDetalessMesh') mouseHoverDetalessMesh: boolean = false
@@ -60,26 +63,24 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
     this.route.paramMap.subscribe(paramMap => {
       const mapId = paramMap.get('id') || ''
       this.mapId = mapId
-      switch (mapId) {
-        case 'weather':
-        case 'cloud':
-        default:
-          this.weatherService.getMapDataFromFirebase(mapId).subscribe(mapData => {
-            this.author = mapData.author
-            this.mapName = mapData.mapName
-            this.heightDimensionTitle = mapData.HeightDimensionTitle
-            this.heightDimensionUnit = mapData.HeightDimensionUnit
-            this.toneDimensionTitle = mapData.ToneDimensionTitle
-            this.toneDimensionUnit = mapData.ToneDimensionUnit
-            this.requireHeightDimension = mapData.requireHeightDimension === "true" ? true : false
-            this.requireToneDimension = mapData.requireToneDimension === "true" ? true : false
-            this.mapDescription = mapData.mapDescription
-            this.sourceUrl = mapData.sourceUrl
-            this.toneGradient = { startColor: mapData.MinToneHex, endColor: mapData.MaxToneHex }
-            this.isWeatherMap = false
-            console.log(mapData, this.mapDescription);
-          })
-          break;
+      this.weatherService.getMapDataFromFirebase(mapId).subscribe(mapData => {
+        this.author = mapData.author
+        this.mapName = mapData.mapName
+        this.heightDimensionTitle = mapData.HeightDimensionTitle
+        this.heightDimensionUnit = mapData.HeightDimensionUnit
+        this.toneDimensionTitle = mapData.ToneDimensionTitle
+        this.toneDimensionUnit = mapData.ToneDimensionUnit
+        this.requireHeightDimension = mapData.requireHeightDimension === "true" ? true : false
+        this.requireToneDimension = mapData.requireToneDimension === "true" ? true : false
+        this.mapDescription = mapData.mapDescription
+        this.sourceUrl = mapData.sourceUrl
+        this.toneGradient = { startColor: mapData.MinToneHex, endColor: mapData.MaxToneHex }
+        this.isWeatherMap = false
+      })
+      if (this.mapId === 'cloud') {
+        this.cloudService.getCloudLastUpdate().subscribe( next => {
+          this.cloudLastUpdate = next.cloudLastUpdate 
+        })
       }
     })
   }
@@ -156,7 +157,6 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
     if (type === 'title') {
       return this.meshDataOnHtml.tone > 2 ? '晴' : this.meshDataOnHtml.tone > 1 ? '多雲' : '陰天'
     } else if(type === 'subtitle') {
-      console.log('subtitle');
       return this.meshDataOnHtml.tone > 2 ? '雲量佔天空的0%至10%' : this.meshDataOnHtml.tone > 1 ? '雲量佔天空的10%至30%' : '雲量佔天空的70%以上'
     } else { return 'Error'}
   }

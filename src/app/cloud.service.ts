@@ -1,5 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { DataTexture, DoubleSide, Material, Mesh, MeshStandardMaterial, Plane, PlaneGeometry } from 'three';
 import { ColorUtilService } from './color-util.service';
 import { ImageProcessingService } from './image-processing.service';
@@ -13,14 +15,18 @@ export class CloudService {
   constructor(
     private httpclient: HttpClient,
     private weatherService: WeatherService,
-    private imageProcess:ImageProcessingService,
+    private imageProcess: ImageProcessingService,
     private colorUtil: ColorUtilService
-    ) { }
+  ) { }
 
   getCloudImage = () => {
-    return this.httpclient.get<any>('https://us-central1-fluid-mote-320807.cloudfunctions.net/retriveCloudImage?type=realtime', 
-    // @ts-ignore
-    { headers: {}, responseType: 'arraybuffer' as ConstrainDOMStringParameters })
+    return this.httpclient.get<any>('https://us-central1-fluid-mote-320807.cloudfunctions.net/retriveCloudImage?type=realtime',
+      // @ts-ignore
+      { headers: {}, responseType: 'arraybuffer' as ConstrainDOMStringParameters })
+  }
+
+  getCloudLastUpdate = (): Observable<{ cloudLastUpdate: string }> => {
+    return this.httpclient.get<any>('https://us-central1-fluid-mote-320807.cloudfunctions.net/retriveCloudImage?type=time')
   }
 
   initCloudMesh = async () => {
@@ -29,7 +35,7 @@ export class CloudService {
       const int8Array = new Uint8ClampedArray(arrayBuffer)
       let bindaryString = ''
       for (let i = 0; i < int8Array.length; i++) {
-        bindaryString+=String.fromCharCode( int8Array[i] );
+        bindaryString += String.fromCharCode(int8Array[i]);
       }
       const base64String = btoa(bindaryString)
       const img = new Image()
