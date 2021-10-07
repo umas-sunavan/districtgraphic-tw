@@ -6085,10 +6085,11 @@ export class WeatherService {
     const locations:ApiLocation[] =  this.converForcastLocations(forcastLocations)
     const districtGraphDatas:DistrictGraphData[] = locations.map( location => {
       const matchedRainRate:string[] = location.weatherElement[0].elementValue.match(/(?<=降雨機率 )\d+/g) || ['-99']
+      const matchedWind:string[] = location.weatherElement[0].elementValue.match(/(?<=級\(每秒)\d+/g) || ['-99']
       return {
         cityName: raw.records.locations[0].locationsName,
         districtName: location.locationName,
-        height: +matchedRainRate[0],
+        height: +matchedWind[0],
         tone: +matchedRainRate[0],
         }
     })
@@ -6214,12 +6215,12 @@ export class WeatherService {
 
   addCloudMap = () => map((maps:any[]):MapInfoInFirebase[] => {
     const weatherInfo:MapInfoInFirebase = {
-      HeightDimensionTitle: '天氣現象',
-      HeightDimensionUnit: '',
+      HeightDimensionTitle: '風速',
+      HeightDimensionUnit: '公尺/秒',
       MaxToneHex: 'EEF588',
       MinToneHex: '70a7f3',
-      ToneDimensionTitle: '雲量分布',
-      ToneDimensionUnit: '',
+      ToneDimensionTitle: '降雨機率',
+      ToneDimensionUnit: '%',
       author: '伍瑪斯',
       authorEmail: 'fareastsunflower@gmail.com',
       mapName: '台灣即時雲圖',
@@ -6227,7 +6228,7 @@ export class WeatherService {
       sourceData: 'https://opendata.cwb.gov.tw/dist/opendata-swagger.html',
       sourceUrl: 'https://opendata.cwb.gov.tw/dist/opendata-swagger.html',
       createDate: new Date('2021/10/05'),
-      requireHeightDimension: 'false',
+      requireHeightDimension: 'true',
       requireToneDimension: 'true',
       mapDescription: "透過氣象局Opendata，能夠取得每小時更新一次的氣象資料\n顏色代表每小時最高溫度，高度代表每小時降雨量\n資料來源是氣象局提供的資料唷！",
       liveStream: 'true'

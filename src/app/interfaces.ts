@@ -23,6 +23,38 @@ export interface WeatherData {
   records: { location: Location[] },
 }
 
+export interface ForcastLocation {
+  locationName: string
+  geocode: string
+  lat: string
+  lon: string
+  weatherElement: {
+    elementName: string
+    description: string
+    time: {
+      startTime: string
+      endTime: string
+      elementValue: {
+        value: string
+        measures: string
+      }[]
+    }[]
+  }[]
+}
+
+export interface WeatherForcastData {
+  success: string,
+  result: {}[],
+  records: { 
+    locations: {
+      datasetDescription: string,
+      locationsName: string,
+      dataid: string,
+      location: ForcastLocation[]
+    }[] 
+  },
+}
+
 export interface EnZhMap {
   enDistrict: string,
   zhDistrict: string,

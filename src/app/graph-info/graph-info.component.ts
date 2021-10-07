@@ -78,8 +78,8 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
         this.isWeatherMap = false
       })
       if (this.mapId === 'cloud') {
-        this.cloudService.getCloudLastUpdate().subscribe( next => {
-          this.cloudLastUpdate = next.cloudLastUpdate 
+        this.cloudService.getCloudLastUpdate().subscribe(next => {
+          this.cloudLastUpdate = next.cloudLastUpdate
         })
       }
     })
@@ -152,13 +152,34 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
     navigator.clipboard.writeText(shareLink)
   }
 
-  readCouldCode = (type: string): string => {
+  interpretWind = (): string => {
     if (!this.meshDataOnHtml) return '讀取中'
-    if (type === 'title') {
-      return this.meshDataOnHtml.tone > 2 ? '晴' : this.meshDataOnHtml.tone > 1 ? '多雲' : '陰天'
-    } else if(type === 'subtitle') {
-      return this.meshDataOnHtml.tone > 2 ? '雲量佔天空的0%至10%' : this.meshDataOnHtml.tone > 1 ? '雲量佔天空的10%至30%' : '雲量佔天空的70%以上'
-    } else { return 'Error'}
+      const wind = this.meshDataOnHtml.height
+      if (wind < 0.2) {
+        return '0級風(煙直上)'
+      } else if (wind < 1.5) {
+        return '1級風(煙示風向)'
+      } else if (wind < 3.3) {
+        return '2級風(感覺有風)'
+      } else if (wind < 5.4) {
+        return '3級風(旌旗展開)'
+      } else if (wind < 7.9) {
+        return '4級風(吹起塵土)'
+      } else if (wind < 10.7) {
+        return '5級風(小樹搖擺)'
+      } else if (wind < 13.8) {
+        return '6級風(電線有聲)'
+      } else if (wind < 17.1) {
+        return '7級風(步行困難)'
+      } else if (wind < 20.7) {
+        return '8級風(折毀樹枝)'
+      } else if (wind < 24.4) {
+        return '9級風(小損房屋)'
+      } else if (wind < 28.4) {
+        return '10級風(拔起樹木)'
+      } else if (wind < 32.6) {
+        return '11級風(損毀普遍)'
+      } else { return '12級風(摧毀巨大)' }
   }
 
 }

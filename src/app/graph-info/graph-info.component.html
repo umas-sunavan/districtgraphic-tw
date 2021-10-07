@@ -22,19 +22,20 @@
             </div>
             <div class="" *ngIf="this.meshDataOnHtml">
                 <div [ngClass]="requireHeightDimension ? '' : 'd-none'">
-                    <small class="zh font-size-s">{{heightDimensionTitle}}</small>
-                    <div class="align-items-baseline  d-flex">
+                    <small class="zh font-size-s">
+                        {{heightDimensionTitle}}
+                        <span *ngIf="mapId === 'cloud'">{{interpretWind()}}</span>
+                    </small>
+                    <div class="align-items-baseline d-flex">                        
                         <h3 class="en font-size-l pe-1">{{this.meshDataOnHtml.height | number: '1.1-1'}}</h3>
                         <small class="zh font-size-s">{{heightDimensionUnit}}</small>
                     </div>
                 </div>
                 <div [ngClass]="requireToneDimension ? '' : 'd-none'">
                     <small class="zh font-size-s">{{toneDimensionTitle}}</small>
-                    <div class="align-items-baseline" [ngClass]="{'d-flex' : mapId !== 'cloud'}">
-                        <h3 *ngIf="mapId === 'cloud'" class="en font-size-l pe-1" >{{readCouldCode('title')}}</h3>
-                        <small *ngIf="mapId === 'cloud'">{{readCouldCode('subtitle')}}</small>
-                        <h3 class="en font-size-l pe-1" *ngIf="mapId !== 'cloud'">{{this.meshDataOnHtml.tone | number: '1.1-1'}}</h3>
-                        <small class="zh font-size-s" *ngIf="mapId !== 'cloud'">{{toneDimensionUnit}}</small>
+                    <div class="align-items-baseline d-flex">
+                        <h3 class="en font-size-l pe-1">{{this.meshDataOnHtml.tone | number: '1.1-1'}}</h3>
+                        <small class="zh font-size-s">{{toneDimensionUnit}}</small>
                     </div>
                 </div>
             </div>
