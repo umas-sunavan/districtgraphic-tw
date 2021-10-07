@@ -418,7 +418,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
           this.initCloud()
 
         // });
-        this.weatherService.getCloudReport().subscribe(graphData => {
+        this.weatherService.getWeatherForcast().subscribe(graphData => {
           console.log(graphData);
           
           // gltf.scene.position.set(0, 0, this.move)

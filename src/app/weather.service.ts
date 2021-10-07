@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams, HttpRequest } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { forkJoin, Observable, of } from 'rxjs';
+import { concatMap, map, mergeMap, tap } from 'rxjs/operators';
 import { enZhMapping } from './en-zh-mapping';
-import { EnZhMap, WeatherData, ApiWeatherData, Location as ApiLocation, DistrictWeatherInfo, DistrictGraphData, googleSheetRawData as GoogleSheetRawData, MapInfoInFirebase, MapAttributeForm, ToneGradient, MapSource, meshText } from './interfaces';
+import { EnZhMap, WeatherData, ApiWeatherData, Location as ApiLocation, DistrictWeatherInfo, DistrictGraphData, googleSheetRawData as GoogleSheetRawData, MapInfoInFirebase, MapAttributeForm, ToneGradient, MapSource, meshText, WeatherForcastData, ForcastLocation, DistrictMeshData } from './interfaces';
 import { Location } from '@angular/common';
 import { AngularFireDatabase } from '@angular/fire/database';
 import { ActivatedRoute } from '@angular/router';
@@ -6034,7 +6034,85 @@ export class WeatherService {
       this.averageToneInDuplicateDistrict,
       this.filterDuplicatedDistrict,
     )
-  
+  }
+
+  getWeatherForcast = (): Observable<DistrictGraphData[]> => {
+    const getCityForcasts:Observable<DistrictGraphData[]>[] = [
+      this.getCityForcast('003'), // 宜蘭縣
+      this.getCityForcast('007'), // 桃園市
+      this.getCityForcast('011'), // 新竹縣
+      this.getCityForcast('015'), // 苗栗縣
+      this.getCityForcast('019'), // 彰化縣
+      this.getCityForcast('023'), // 南投縣
+      this.getCityForcast('027'), // 雲林縣
+      this.getCityForcast('031'), // 嘉義縣
+      this.getCityForcast('035'), // 屏東縣
+      this.getCityForcast('039'), // 臺東縣
+      this.getCityForcast('043'), // 花蓮縣
+      this.getCityForcast('047'), // 澎湖縣
+      this.getCityForcast('051'), // 基隆縣
+      this.getCityForcast('055'), // 新竹市
+      this.getCityForcast('059'), // 嘉義市
+      this.getCityForcast('063'), // 臺北市
+      this.getCityForcast('067'), // 高雄市
+      this.getCityForcast('071'), // 新北市
+      this.getCityForcast('075'), // 臺中市
+      this.getCityForcast('079'), // 臺南市
+      this.getCityForcast('083'), // 連江市
+      this.getCityForcast('087'), // 金門市
+    ]
+    return forkJoin(getCityForcasts).pipe(
+      map( cities => {
+        // @ts-ignore
+        const allForcast:DistrictGraphData[] = cities.flat()
+        return allForcast
+      })
+    )
+    
+  }
+
+  getCityForcast = (cityCode:string):Observable<DistrictGraphData[]> => {
+    const url = `https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-${cityCode}`
+    const params = new HttpParams()
+    .append('Authorization', 'CWB-58C1E113-D5B9-45A0-9295-BB080D302D68')
+    .append('elementName', 'WeatherDescription')
+    return this.httpclient.get<WeatherForcastData>(url, { params: params })
+    .pipe(this.convertCloudForcastToDistrictGraphData)
+  }
+
+  convertCloudForcastToDistrictGraphData = map(( (raw:WeatherForcastData):DistrictGraphData[] => {
+    const forcastLocations:ForcastLocation[] = raw.records.locations[0].location
+    const locations:ApiLocation[] =  this.converForcastLocations(forcastLocations)
+    const districtGraphDatas:DistrictGraphData[] = locations.map( location => {
+      const matchedRainRate:string[] = location.weatherElement[0].elementValue.match(/(?<=降雨機率 )\d+/g) || ['-99']
+      return {
+        cityName: raw.records.locations[0].locationsName,
+        districtName: location.locationName,
+        height: +matchedRainRate[0],
+        tone: +matchedRainRate[0],
+        }
+    })
+    return districtGraphDatas
+  }))
+
+  converForcastLocations = (forcastLocations: ForcastLocation[]) => {
+    const locations: ApiLocation[] = forcastLocations.map( forcastLocation => {
+      return {
+        lat: forcastLocation.lat,
+        locationName: forcastLocation.locationName,
+        lon: forcastLocation.lon,
+        parameter: [
+          { parameterName: 'datasetDescription', parameterValue: 'String' }
+        ],
+        stationId: '0',
+        time: {},
+        weatherElement: [{
+          elementName: forcastLocation.weatherElement[0].time[0].elementValue[0].measures, 
+          elementValue: forcastLocation.weatherElement[0].time[0].elementValue[0].value 
+        }]
+      }
+    })
+    return locations
   }
 
   averageHeightInDuplicateDistrict = map((districts: DistrictGraphData[]): DistrictGraphData[] => {
