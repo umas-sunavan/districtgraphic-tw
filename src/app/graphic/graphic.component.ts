@@ -414,7 +414,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         // 雲圖 資料
         this.weatherService.getWeatherForcast().subscribe(graphData => {
           // gltf.scene.position.set(0, 0, this.move)
-          this.meshUtilService.setDefaultMeshColor(this.colorUtil.convertHexTo0to1('adcdc2'))
           this.initCloud()
           this.initCloud()
           this.textMeshService.enableDimensionText()
