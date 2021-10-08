@@ -221,7 +221,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     const nearestCamera: Intersection = intersactions.sort((a, b) => a.distance - b.distance)[0]
     this.meshDataOnHtml = this.meshUtilService.findDataByMeshName(this.meshesData, <Mesh>nearestCamera.object)
     console.log(this.meshDataOnHtml);
-    
+
   }
 
   updateMousePosiion = (event: MouseEvent): { x: number, y: number } => {
@@ -243,11 +243,11 @@ export class GraphicComponent implements OnInit, AfterViewInit {
 
   setupCamera = () => {
     this.camera.aspect = this.canvas.nativeElement.offsetWidth / this.canvas.nativeElement.offsetHeight
-    // this.camera.position.set(5, 16, 1);
+    this.camera.position.set(5, 16, 1);
     this.camera.position.set(0, 16, 0);
-    // this.camera.lookAt(4, 0, 0);
+    this.camera.lookAt(4, 0, 0);
     this.camera.lookAt(0, 0, 0);
-    // this.animateCamera()
+    this.animateCamera()
   }
 
   animateCamera = () => {
@@ -359,7 +359,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   getMaterialColorByRate = (highestTemp: number, lowestTemp: number, currentTemp: number): { r: number, g: number, b: number, } => {
-    const colorRate = (currentTemp - highestTemp) / (lowestTemp - highestTemp)    
+    const colorRate = (currentTemp - highestTemp) / (lowestTemp - highestTemp)
     const hashColor = this.colorUtil.blendHexColors('#' + this.toneColor.maxHex, '#' + this.toneColor.minHex, colorRate)
     return this.colorUtil.convertHexTo0to1(hashColor)
   }
@@ -408,7 +408,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
           // gltf.scene.position.set(0, 0, this.move)
           this.textMeshService.enableDimensionText()
           this.generateMap(graphData)
-        });
+        })
         break;
       case 'cloud':
         // 雲圖 資料
@@ -419,7 +419,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
           this.textMeshService.enableDimensionText()
           this.generateMap(graphData)
         });
-
         break;
       default:
         // google sheet 資料
@@ -486,16 +485,16 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         mesh.material = mapMaterial.clone();
         mesh.receiveShadow = true
         const meshData = this.meshUtilService.findDataByMeshName(this.meshesData, mesh)
-        if (meshData) {          
+        if (meshData) {
           // 這邊因為有複數的資料，如果有兩個重複的鄉鎮市區資料，那麼地圖會抓到第一個，然後染色。第二個鄉鎮市區資料則不會染色。當mousemove抓到之後染色時就抓不到資料
           meshData.rgbColor = this.getMaterialColorByRate(maxTone, minTone, meshData.tone);
           this.meshUtilService.paintMesh(mesh, meshData.rgbColor)
-          meshData.mesh3d = mesh          
+          meshData.mesh3d = mesh
         } else {
-          this.meshUtilService.resetMeshGeometry(mesh)          
+          this.meshUtilService.resetMeshGeometry(mesh)
           this.meshUtilService.paintMesh(mesh, this.meshUtilService.defaultMeshColor)
         }
-        
+
       }
     });
   }

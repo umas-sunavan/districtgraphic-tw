@@ -94,6 +94,7 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
     btn.blur()
     this.weatherService.getAllMapsFromFirebase().subscribe(maps => {
       maps = this.appendDate(maps)
+      maps = this.sortMapByDate(maps)
       this.allMaps = maps
     })
   }
@@ -102,6 +103,14 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
     map.createDate = new Date(map.createDate)
     return map
   })
+
+  sortMapByDate = (maps: MapInfoInFirebase[]) => {
+    return maps.sort( (a,b) => {
+      const aDate = new Date(a.createDate)
+      const bDate = new Date(b.createDate)
+      return  bDate.getTime() - aDate.getTime()
+    })
+  }
 
   clickMapLink = (mapId: string) => {
     this.router.navigate(['/maps', mapId]);
