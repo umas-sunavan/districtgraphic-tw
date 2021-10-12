@@ -23,7 +23,7 @@ export class GoogleSheetIntercepter implements HttpInterceptor {
                     })
                     return of(passed)
                 }   else if (err.status == 0) {
-                    alert("你的表單好像不是公開的？請到該表單點選「共用」->「取得連結」->設定成「知道連結的使用者」")
+                    // alert("你的表單好像不是公開的？請到該表單點選「共用」->「取得連結」->設定成「知道連結的使用者」")
                 }
                 return of(err)
             })

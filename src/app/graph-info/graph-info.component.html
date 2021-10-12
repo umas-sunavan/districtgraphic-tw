@@ -3,7 +3,7 @@
         <div class="overview-info pb-5">
             <p class="zh mb-4 theme-font font-size-s">台灣資訊圖像化 v1.1</p>
             <h5 class="zh pb-0 theme-font font-size-m" style="font-size: 1.5rem;">{{mapName}}</h5>
-            <p *ngIf="mapId === 'cloud'" class="zh theme-font font-size-s">{{'2021-10-06-19-30' | dashDate}}前更新雲圖</p>
+            <p *ngIf="mapId === 'cloud'" class="zh theme-font font-size-s">雲圖最後更新時間：{{'2021-10-06-19-30' | dashDate}}</p>
             <div class="zh theme-font d-flex">
                 <p class="zh pe-2 font-size-s">地圖作者</p>
                 <p class="zh font-size-s">{{author}}</p>
@@ -352,9 +352,9 @@
                     [ngStyle]="{'background-image': 'linear-gradient(to top,#' + map.MaxToneHex + ', #' + map.MinToneHex + ')'}">
                 </div>
                 <div class="d-flex flex-column me-auto">
-                    <p class="theme-font-m-zh d-flex align-items-center">
-                        {{map.mapName}}
-                        <span *ngIf="map.liveStream" class="badge live-badge font-size-s d-flex align-items-center ms-2">
+                    <p class="theme-font-m-zh d-block d-sm-flex align-items-center">
+                        <span class="me-2">{{map.mapName}}</span>
+                        <span *ngIf="map.liveStream" class="badge live-badge font-size-s d-sm-flex mb-2 mb-sm-0 align-items-center">
                             即時更新
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ms-2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
                         </span>

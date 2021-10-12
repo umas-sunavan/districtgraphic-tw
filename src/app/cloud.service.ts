@@ -57,7 +57,7 @@ export class CloudService {
         if (!context) throw new Error("No context found");
         context.drawImage(img, 0, 0)
         const cloudMaterial = this.setupCloudMaterial(context)
-        const cloudGeo = this.setupCloudGeo()
+        const cloudGeo = this.setupCloudGeo(17.4, 17.4, 572, 572)
         const cloudObj = new Mesh(cloudGeo, cloudMaterial)
         cloudObj.name = 'cloud'
         resolve(cloudObj)
@@ -67,8 +67,8 @@ export class CloudService {
   }
 
   initSkeletionCloudMmesh = () => {
-    const cloudMaterial = new MeshStandardMaterial({ color: 0xffffff, transparent: true, wireframe: true})
-    const cloudGeo = this.setupCloudGeo()
+    const cloudMaterial = new MeshStandardMaterial({ color: 0xffffff, transparent: true, wireframe: true, side: DoubleSide})
+    const cloudGeo = this.setupCloudGeo(17.4, 17.4, 50, 50)
     const cloudObj = new Mesh(cloudGeo, cloudMaterial)
     this.animateSkeleton(cloudObj, cloudMaterial)
     return cloudObj
@@ -110,8 +110,8 @@ export class CloudService {
     return cloudMaterial
   }
 
-  setupCloudGeo = (): PlaneGeometry => {
-    const cloudGeo = new PlaneGeometry(17.4, 17.4, 572, 572)
+  setupCloudGeo = (width: number, height: number, widthSegments:number, heightSegments: number): PlaneGeometry => {
+    const cloudGeo = new PlaneGeometry(width, height, widthSegments, heightSegments)
     cloudGeo.rotateY(Math.PI)
     cloudGeo.rotateZ(Math.PI * 0.993)
     cloudGeo.rotateX(-Math.PI * 0.5)
