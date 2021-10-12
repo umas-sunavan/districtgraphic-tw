@@ -2,10 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { DataTexture, DoubleSide, Material, Mesh, MeshStandardMaterial, Plane, PlaneGeometry } from 'three';
+import { DataTexture, DoubleSide, Material, Mesh, MeshStandardMaterial, Object3D, Plane, PlaneGeometry } from 'three';
 import { ColorUtilService } from './color-util.service';
 import { ImageProcessingService } from './image-processing.service';
 import { WeatherService } from './weather.service';
+import gsap, { Power1 } from 'gsap';
+import { environment } from 'src/environments/environment';
+
 
 @Injectable({
   providedIn: 'root'
@@ -20,13 +23,23 @@ export class CloudService {
   ) { }
 
   getCloudImage = () => {
-    return this.httpclient.get<any>('https://us-central1-fluid-mote-320807.cloudfunctions.net/retriveCloudImage?type=realtime',
+    if ( environment.useLocalRetriveCloud) {
+      return this.httpclient.get<any>('https://us-central1-fluid-mote-320807.cloudfunctions.net/retriveCloudImage?type=realtime',
+        // @ts-ignore
+        { headers: {}, responseType: 'arraybuffer' as ConstrainDOMStringParameters })
+    } else {
+      return this.httpclient.get<any>('http://localhost:8081?type=realtime',
       // @ts-ignore
       { headers: {}, responseType: 'arraybuffer' as ConstrainDOMStringParameters })
+    }
   }
 
   getCloudLastUpdate = (): Observable<{ cloudLastUpdate: string }> => {
-    return this.httpclient.get<any>('https://us-central1-fluid-mote-320807.cloudfunctions.net/retriveCloudImage?type=time')
+    if ( environment.useLocalRetriveCloud) {
+      return this.httpclient.get<any>('https://us-central1-fluid-mote-320807.cloudfunctions.net/retriveCloudImage?type=time')
+    } else {
+      return this.httpclient.get<any>('http://localhost:8081?type=time')
+    }
   }
 
   initCloudMesh = async () => {
@@ -46,12 +59,32 @@ export class CloudService {
         const cloudMaterial = this.setupCloudMaterial(context)
         const cloudGeo = this.setupCloudGeo()
         const cloudObj = new Mesh(cloudGeo, cloudMaterial)
-        cloudObj.translateY(2)
         cloudObj.name = 'cloud'
         resolve(cloudObj)
       }
       img.src = 'data:image/jpeg;base64,' + base64String
     })
+  }
+
+  initSkeletionCloudMmesh = () => {
+    const cloudMaterial = new MeshStandardMaterial({ color: 0xffffff, transparent: true, wireframe: true})
+    const cloudGeo = this.setupCloudGeo()
+    const cloudObj = new Mesh(cloudGeo, cloudMaterial)
+    this.animateSkeleton(cloudObj, cloudMaterial)
+    return cloudObj
+  }
+
+  animateSkeleton = (object: Object3D, cloud:Material) => {
+    const from = { opacity: 0.2 }
+    gsap.to(
+      from,
+      {
+        opacity: 0.7,
+        onUpdate: () => {
+          cloud.opacity = from.opacity
+        },
+      }
+    ).delay(1).play().yoyo(true).repeat(999)
   }
 
   setupCloudMaterial = (context: CanvasRenderingContext2D): Material => {
@@ -82,7 +115,7 @@ export class CloudService {
     cloudGeo.rotateY(Math.PI)
     cloudGeo.rotateZ(Math.PI * 0.993)
     cloudGeo.rotateX(-Math.PI * 0.5)
-    cloudGeo.translate(3.7, 0, 0.4)
+    cloudGeo.translate(3.7, 2, 0.4)
     return cloudGeo
   }
 

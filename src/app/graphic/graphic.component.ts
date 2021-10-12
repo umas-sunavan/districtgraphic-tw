@@ -144,7 +144,10 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   initCloud = () => {
+    const cloudSkeleton = this.cloudService.initSkeletionCloudMmesh()
+    this.scene.add(cloudSkeleton)
     this.cloudService.initCloudMesh().then(next => {
+      this.scene.remove(cloudSkeleton)
       this.cloud = next
       this.scene.add(next)
     })
@@ -220,8 +223,6 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   updateTextOnHtml = (intersactions: Intersection[]) => {
     const nearestCamera: Intersection = intersactions.sort((a, b) => a.distance - b.distance)[0]
     this.meshDataOnHtml = this.meshUtilService.findDataByMeshName(this.meshesData, <Mesh>nearestCamera.object)
-    console.log(this.meshDataOnHtml);
-
   }
 
   updateMousePosiion = (event: MouseEvent): { x: number, y: number } => {

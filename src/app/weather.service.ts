@@ -143,13 +143,15 @@ export class WeatherService {
     const forcastLocations: ForcastLocation[] = raw.records.locations[0].location
     const locations: ApiLocation[] = this.converForcastLocations(forcastLocations)
     const districtGraphDatas: DistrictGraphData[] = locations.map(location => {
-      const matchedRainRate: string[] = location.weatherElement[0].elementValue.match(/(?<=降雨機率 )\d+/g) || ['-99']
-      const matchedWind: string[] = location.weatherElement[0].elementValue.match(/(?<=級\(每秒)\d+/g) || ['-99']
+      const matchedRainRates: string[] = location.weatherElement[0].elementValue.match(/降雨機率 \d+/g) || ['-99']
+      const matchedRainRate: string = matchedRainRates[0].replace('降雨機率 ', '')
+      const matchedWinds: string[] = location.weatherElement[0].elementValue.match(/級\(每秒\d+/g) || ['-99']
+      const matchedWind: string = matchedWinds[0].replace('級\(每秒', '')
       return {
         cityName: raw.records.locations[0].locationsName,
         districtName: location.locationName,
-        height: +matchedWind[0],
-        tone: +matchedRainRate[0],
+        height: +matchedWind,
+        tone: +matchedRainRate,
       }
     })
     return districtGraphDatas
