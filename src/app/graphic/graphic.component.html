@@ -9,6 +9,6 @@
             [sumHeight]="sumHeight"
             [ngStyle]="{'mix-blend-mode': showPopup ? 'unset' : 'darken'}"
     ></app-graph-info>
-<div #canvas (mousemove)="onMousemove($event)" [ngClass]="showPopup? 'blur':''"
+<div #canvas (mousemove)="onMousemove($event)" [ngClass]="{'blur': showPopup, 'blend': darkMode}"
     style="width: 100%; height:100vh;">
 </div>

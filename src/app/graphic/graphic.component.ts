@@ -14,6 +14,7 @@ import { CloudService } from '../cloud.service';
 import { Observable } from 'rxjs';
 import { MeshUtilService } from '../mesh-util.service';
 import { TextMeshService } from '../text-mesh.service';
+import * as THREE from 'three';
 
 @Component({
   selector: 'app-graphic',
@@ -51,6 +52,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   sumHeight: number;
   measureRenderTime: number = 0
   cloud?: Object3D
+  darkMode: boolean = false
 
   constructor(
     private weatherService: WeatherService,
@@ -402,37 +404,44 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     if (!mapId) throw new Error("no mapId");
 
     this.resetTone()
-    switch (mapId) {
-      case 'weather':
-        // weather 資料
-        this.weatherService.getWeatherInfo().subscribe(graphData => {
-          // gltf.scene.position.set(0, 0, this.move)
-          this.textMeshService.enableDimensionText()
-          this.generateMap(graphData)
-        })
-        break;
-      case 'cloud':
-        // 雲圖 資料
-        this.weatherService.getWeatherForcast().subscribe(graphData => {
-          // gltf.scene.position.set(0, 0, this.move)
-          this.initCloud()
-          this.initCloud()
-          this.textMeshService.enableDimensionText()
-          this.generateMap(graphData)
-        });
-        break;
-      default:
-        // google sheet 資料
-        this.weatherService.getMapDataFromFirebase(mapId).subscribe(mapData => {
-          this.setupTone(mapData)
     this.clearCloud()
+    this.weatherService.getMapDataFromFirebase(mapId).subscribe(mapData => {
+      this.setupTone(mapData)
+      switch (mapId) {
+        case 'weather':
+          // weather 資料
+          this.darkMode = false
+          this.scene.background = new Color(0xeeeeee)
+          this.weatherService.getWeatherInfo().subscribe(graphData => {
+            // gltf.scene.position.set(0, 0, this.move)
+            this.textMeshService.enableDimensionText()
+            this.generateMap(graphData)
+          })
+          break;
+        case 'cloud':
+          // 雲圖 資料
+          this.darkMode = true
+          this.scene.background = new Color(0x3f617b)
+          this.weatherService.getWeatherForcast().subscribe(graphData => {
+            // gltf.scene.position.set(0, 0, this.move)
+            this.initCloud()
+            this.textMeshService.enableDimensionText()
+            this.generateMap(graphData)
+          });
+          break;
+        default:
+          // google sheet 資料
+          this.darkMode = false
+          this.scene.background = new Color(0xeeeeee)
           this.textMeshService.enableDimensionText(mapData)
           const googleSheetId = this.weatherService.getGoogleSheetIdFromUrl(mapData.sourceUrl)
           this.weatherService.getGoogleSheetInfo(googleSheetId).subscribe(graphData => {
             this.generateMap(graphData)
           })
-        })
-        break;
+          break;
+      }
+    })
+  }
     }
   }
 
