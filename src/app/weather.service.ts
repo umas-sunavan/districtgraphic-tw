@@ -150,7 +150,7 @@ export class WeatherService {
       return {
         cityName: raw.records.locations[0].locationsName,
         districtName: location.locationName,
-        height: +matchedWind,
+        height: 0,
         tone: +matchedRainRate,
       }
     })
@@ -268,7 +268,8 @@ export class WeatherService {
       requireHeightDimension: 'true',
       requireToneDimension: 'true',
       mapDescription: "透過氣象局Opendata，能夠取得每小時更新一次的氣象資料\n顏色代表每小時最高溫度，高度代表每小時降雨量\n資料來源是氣象局提供的資料唷！",
-      liveStream: 'true'
+      liveStream: 'true',
+      isWeatherMap: 'true',
     }
     maps.push(weatherInfo)
     return maps
@@ -276,10 +277,10 @@ export class WeatherService {
 
   addCloudMap = () => map((maps: any[]): MapInfoInFirebase[] => {
     const weatherInfo: MapInfoInFirebase = {
-      HeightDimensionTitle: '風速',
-      HeightDimensionUnit: '公尺/秒',
-      MaxToneHex: 'EEF588',
-      MinToneHex: '70a7f3',
+      HeightDimensionTitle: '',
+      HeightDimensionUnit: '',
+      MaxToneHex: '7ba2dc',
+      MinToneHex: 'eef3fc',
       ToneDimensionTitle: '降雨機率',
       ToneDimensionUnit: '%',
       author: '伍瑪斯',
@@ -289,10 +290,11 @@ export class WeatherService {
       sourceData: 'https://opendata.cwb.gov.tw/dist/opendata-swagger.html',
       sourceUrl: 'https://opendata.cwb.gov.tw/dist/opendata-swagger.html',
       createDate: new Date(),
-      requireHeightDimension: 'true',
+      requireHeightDimension: 'false',
       requireToneDimension: 'true',
       mapDescription: "透過氣象局Opendata，能夠取得每小時更新一次的氣象資料\n顏色代表每小時最高溫度，高度代表每小時降雨量\n資料來源是氣象局提供的資料唷！",
-      liveStream: 'true'
+      liveStream: 'true',
+      isWeatherMap: 'false',
     }
     maps.push(weatherInfo)
     return maps
