@@ -425,6 +425,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         // google sheet 資料
         this.weatherService.getMapDataFromFirebase(mapId).subscribe(mapData => {
           this.setupTone(mapData)
+    this.clearCloud()
           this.textMeshService.enableDimensionText(mapData)
           const googleSheetId = this.weatherService.getGoogleSheetIdFromUrl(mapData.sourceUrl)
           this.weatherService.getGoogleSheetInfo(googleSheetId).subscribe(graphData => {
@@ -433,6 +434,11 @@ export class GraphicComponent implements OnInit, AfterViewInit {
         })
         break;
     }
+  }
+
+  clearCloud = () => {
+    const cloudObject = this.scene.children.find(object => object.name === 'cloud')
+    if (cloudObject) cloudObject.removeFromParent()
   }
 
   setupTone = (mapInfo: MapInfoInFirebase) => {
