@@ -75,7 +75,7 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
         this.mapDescription = mapData.mapDescription
         this.sourceUrl = mapData.sourceUrl
         this.toneGradient = { startColor: mapData.MinToneHex, endColor: mapData.MaxToneHex }
-        this.isWeatherMap = false
+        this.isWeatherMap = mapData.isWeatherMap === "true" ? true : false
       })
       if (this.mapId === 'cloud') {
         this.cloudService.getCloudLastUpdate().subscribe(next => {

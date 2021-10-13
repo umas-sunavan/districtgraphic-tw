@@ -164,6 +164,7 @@ export interface MapInfoInFirebase {
   requireToneDimension:string | null
   mapDescription:string;
   liveStream?:string
+  isWeatherMap?:string
 }
 
   export interface MapAttributeForm {
