@@ -164,12 +164,14 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   }
 
   toggleCloud = (shouldShow: boolean) => {
-    const isShowing = this.scene.children.find(mesh => mesh.name === this.cloud?.name)
     if (!this.cloud) return
+    // @ts-ignore
+    const material: Material = this.cloud.material
+    const isShowing = material.opacity === 1
     if (shouldShow && !isShowing) {
-      this.scene.add(this.cloud)
+      material.opacity = 1
     } else if (!shouldShow && isShowing) {
-      this.scene.remove(isShowing)
+      material.opacity = 0.5
     }
   }
 
@@ -442,6 +444,14 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       }
     })
   }
+
+  uiBlendMode = () => {
+    if(this.showPopup) {
+      return 'unset'
+    } else if (this.darkMode) {
+      return 'color-dodge'
+    } else {
+      return 'darken'
     }
   }
 
@@ -456,7 +466,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.units.height = mapInfo.HeightDimensionUnit
     this.units.tone = mapInfo.ToneDimensionUnit
   }
-
+  
   resetTone = () => {
     this.toneColor = { maxHex: 'EEF588', minHex: '70a7f3' }
     this.units = { tone: '溫', height: '降雨量' }
