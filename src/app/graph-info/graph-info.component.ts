@@ -1,12 +1,12 @@
 import { Component, Input, OnInit, Output, ViewChild, EventEmitter, AfterViewInit } from '@angular/core';
 import { AngularFireDatabase } from '@angular/fire/database';
-import { FormControl, FormGroup } from '@angular/forms';
+import { FormControl, FormGroup, NgModel } from '@angular/forms';
 import { DistrictMeshData, MapAttributeForm, MapInfoInFirebase, MapSource, ToneGradient } from '../interfaces';
 import { WeatherService } from '../weather.service';
 import { Router, ActivatedRoute, ParamMap } from '@angular/router';
 import { calcPossibleSecurityContexts } from '@angular/compiler/src/template_parser/binding_parser';
 import { CloudService } from '../cloud.service';
-
+import mixpanel from 'mixpanel-browser'
 
 @Component({
   selector: 'app-graph-info',
@@ -60,6 +60,7 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
 
 
   ngOnInit(): void {
+    this.initMixpanel()
     this.route.paramMap.subscribe(paramMap => {
       const mapId = paramMap.get('id') || ''
       this.mapId = mapId
@@ -80,9 +81,15 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
       if (this.mapId === 'cloud') {
         this.cloudService.getCloudLastUpdate().subscribe(next => {
           this.cloudLastUpdate = next.cloudLastUpdate
+          mixpanel.track('get_cloud_last_update', {'last_update': this.cloudLastUpdate});
         })
       }
     })
+  }
+
+  initMixpanel = () => {
+    mixpanel.init('2364e64eb3aa323314fc7e5cc595dc73', {debug: true}); 
+    mixpanel.track('landing', {'on map id': this.mapId, 'on map name': this.mapName});
   }
 
   async ngAfterViewInit() {
@@ -97,6 +104,17 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
       maps = this.sortMapByDate(maps)
       this.allMaps = maps
     })
+    mixpanel.track('open_browse_maps_popup');
+  }
+
+  closeBrowseMaps = () => {
+    this.blurGraph.emit(false)
+    this.showBrowseMapsPopup = !this.showBrowseMapsPopup
+    mixpanel.track('close_browse_maps_popup');
+  }
+
+  clickSourseUrl = (sourceUrl:string) => {
+    mixpanel.track('click_sourse_url', {'source_url': sourceUrl});
   }
 
   appendDate = (maps: MapInfoInFirebase[]) => maps.map(map => {
@@ -117,17 +135,41 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
     this.onMapChanged.emit(mapId)
     this.blurGraph.emit(false)
     this.showBrowseMapsPopup = !this.showBrowseMapsPopup;
+    mixpanel.track('click_map', {'map_id': mapId, 'map_name': this.allMaps.find(map => map.mapUrl === mapId)?.mapName});
   }
 
-  openCreateProcess = (btn: any) => {
+  openCreateMapPop = (btn: any) => {
     this.blurGraph.emit(true)
     this.showCreateMapPopup = !this.showCreateMapPopup;
     btn.blur()
+    mixpanel.track('open_create_map_popup');
   }
 
-  submitUrl = (formGroup: FormGroup) => {
+  closeCreateMapPop = () => {
+    this.blurGraph.emit(false)
+    this.showCreateMapPopup = !this.showCreateMapPopup
+    mixpanel.track('close_create_map_popup');
+  }
+
+  clickTemplateSheet = () => {
+    mixpanel.track('click_template_sheet');
+  }
+
+  urlLinkChange = (link: NgModel) => {
+    mixpanel.track('change_create_map_url', { 'link': link.value});
+  }
+
+  submitUrl = (formGroup: any) => {
     this.showCreateMapPopup = !this.showCreateMapPopup
     this.showEditMapPopup = !this.showEditMapPopup
+    console.log(formGroup.urlLink);
+    mixpanel.track('open_editing_map_popup', { 'link': formGroup.urlLink});
+  }
+
+  closeEditingMap = () => {
+    this.blurGraph.emit(false)
+    this.showEditMapPopup = !this.showEditMapPopup
+    mixpanel.track('close_editing_map_popup');
   }
 
   clickSubmit = (event: Event, submitBtn: any) => {
@@ -140,55 +182,33 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
     this.showLinkPopup = !this.showLinkPopup
     this.mapName = mapAttribute.mapTitle
     this.author = mapAttribute.authorName
-    console.log(mapAttribute);
     // add them in case they are not exist in the form due to the "disable" directive
     if (!mapAttribute.heightTitle) mapAttribute.heightTitle = ''
     if (!mapAttribute.toneTitle) mapAttribute.toneTitle = ''
     if (!mapAttribute.heightUnit) mapAttribute.heightUnit = ''
     if (!mapAttribute.toneUnit) mapAttribute.toneUnit = ''
     const pushedMapRef = this.weatherService.pushMapToFirebase(mapAttribute, toneGradient, mapSource)
+    mixpanel.track('open_show_link_popup', { 'map_id': mapSource, 'map_name': mapAttribute.mapTitle});
     if (pushedMapRef.key) {
       const mapId: string = pushedMapRef.key
       this.router.navigate(['/maps', mapId]);
       this.weatherService.setMapRefAsUrlToFirebase(pushedMapRef, mapId)
       this.shareLink = window.location.origin + this.weatherService.addBaseUrl('') + 'maps/' + mapId
       this.onMapChanged.emit(mapId)
+      mixpanel.track('map_created', { 'map_id': mapSource, 'map_name': mapAttribute.mapTitle});
     }
   }
 
   copyShareLink = (btnElement: HTMLButtonElement, shareLink: string) => {
     btnElement.children[1].innerHTML = "複製成功！"
     navigator.clipboard.writeText(shareLink)
+    mixpanel.track('copy_share_link', { 'link': shareLink});
   }
 
-  interpretWind = (): string => {
-    if (!this.meshDataOnHtml) return '讀取中'
-      const wind = this.meshDataOnHtml.height
-      if (wind < 0.2) {
-        return '0級風(煙直上)'
-      } else if (wind < 1.5) {
-        return '1級風(煙示風向)'
-      } else if (wind < 3.3) {
-        return '2級風(感覺有風)'
-      } else if (wind < 5.4) {
-        return '3級風(旌旗展開)'
-      } else if (wind < 7.9) {
-        return '4級風(吹起塵土)'
-      } else if (wind < 10.7) {
-        return '5級風(小樹搖擺)'
-      } else if (wind < 13.8) {
-        return '6級風(電線有聲)'
-      } else if (wind < 17.1) {
-        return '7級風(步行困難)'
-      } else if (wind < 20.7) {
-        return '8級風(折毀樹枝)'
-      } else if (wind < 24.4) {
-        return '9級風(小損房屋)'
-      } else if (wind < 28.4) {
-        return '10級風(拔起樹木)'
-      } else if (wind < 32.6) {
-        return '11級風(損毀普遍)'
-      } else { return '12級風(摧毀巨大)' }
+  closeShowLinkPopup = () => {
+    this.blurGraph.emit(false)
+    this.showLinkPopup = !this.showLinkPopup
+    mixpanel.track('close_show_link_popup');
   }
 
 }

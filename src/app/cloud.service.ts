@@ -75,16 +75,16 @@ export class CloudService {
   }
 
   animateSkeleton = (object: Object3D, cloud:Material) => {
-    const from = { opacity: 0.2 }
+    const from = { opacity: 0.0 }
     gsap.to(
       from,
       {
-        opacity: 0.7,
+        opacity: 0.4,
         onUpdate: () => {
           cloud.opacity = from.opacity
         },
       }
-    ).delay(1).play().yoyo(true).repeat(999)
+    ).play().yoyo(true).repeat(999)
   }
 
   setupCloudMaterial = (context: CanvasRenderingContext2D): Material => {

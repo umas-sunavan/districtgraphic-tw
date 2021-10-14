@@ -252,7 +252,7 @@ export class WeatherService {
 
   addWeatherMap = () => map((maps: any[]): MapInfoInFirebase[] => {  
     const weatherInfo: MapInfoInFirebase = {
-      HeightDimensionTitle: '今日降雨量',
+      HeightDimensionTitle: '今日累積降雨量',
       HeightDimensionUnit: '毫米',
       MaxToneHex: 'EEF588',
       MinToneHex: '70a7f3',
@@ -292,7 +292,7 @@ export class WeatherService {
       createDate: new Date(),
       requireHeightDimension: 'false',
       requireToneDimension: 'true',
-      mapDescription: "透過氣象局Opendata，能夠取得每小時更新一次的氣象資料\n顏色代表每小時最高溫度，高度代表每小時降雨量\n資料來源是氣象局提供的資料唷！",
+      mapDescription: "使用氣象局的衛星雲圖資料，重建即時的3D雲圖，每20分鐘更新一次。同時也呈現各地區的降雨機率。",
       liveStream: 'true',
       isWeatherMap: 'false',
     }

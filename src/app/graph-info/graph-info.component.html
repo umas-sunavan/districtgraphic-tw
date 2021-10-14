@@ -24,7 +24,6 @@
                 <div [ngClass]="requireHeightDimension ? '' : 'd-none'">
                     <small class="zh font-size-s">
                         {{heightDimensionTitle}}
-                        <span *ngIf="mapId === 'cloud'">{{interpretWind()}}</span>
                     </small>
                     <div class="align-items-baseline d-flex">                        
                         <h3 class="en font-size-l pe-1">{{this.meshDataOnHtml.height | number: '1.1-1'}}</h3>
@@ -49,10 +48,10 @@
             <h3 class="zh font-size-m">移動滑鼠以探索各區資訊</h3>
             <h3 class="en font-size-s">Explore by moving your mouse.</h3>
         </div>
-        <div class="mt-auto d-flex flex-column">
+        <div class="mt-auto d-flex flex-column mb-4 mb-sm-0">
             <button (click)="openBrowseMaps(openBtn)"
                 class="btn-secondary px-4 py-2 mb-3 btn-secondary theme-font bg-transparent">瀏覽所有地圖</button>
-            <button (click)="openCreateProcess(openBtn)" class="btn btn-primary px-4 py-2 btn-primary"
+            <button (click)="openCreateMapPop(openBtn)" class="btn btn-primary px-4 py-2 btn-primary"
                 #openBtn>創建你的地圖！</button>
         </div>
     </div>
@@ -80,7 +79,7 @@
             </p>
             <p class="text-end map-description theme-font-s-zh mt-auto d-flex">{{mapDescription}}</p>
         </div>
-        <a [href]="sourceUrl" target="_blank" style="pointer-events: all;" class="py-2 d-flex align-items-center">
+        <a [href]="sourceUrl" target="_blank" style="pointer-events: all;" class="py-2 d-flex align-items-center" (click)="clickSourseUrl(sourceUrl)">
             <p class="pe-1 theme-font-s-zh">地圖原始資料</p>
             <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -115,7 +114,7 @@
         <div class="pb-4 d-flex justify-content-between align-items-stretch">
             <h1 class="zh font-size-m theme-font">建立你的地圖</h1>
             <button class="btn bg-transparent border-0"
-                (click)="this.blurGraph.emit(false); showCreateMapPopup = !showCreateMapPopup" #closeUrlForm>
+                type="button" (click)="closeCreateMapPop()" #closeUrlForm>
                 <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 6.5L6 18.5" stroke="#0088DC" stroke-opacity="0.69" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round" />
@@ -128,7 +127,7 @@
             <div class="mb-4 step-1 d-flex flex-column">
                 <!-- <p class="text-center theme-font-s-zh mb-2">1. 複製這個表單</p> -->
                 <div class="text-center w-100 d-flex rounded-theme btn-primary btn-primary my-auto">
-                    <a href="https://docs.google.com/spreadsheets/d/1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q/copy"
+                    <a (click)="clickTemplateSheet()" href="https://docs.google.com/spreadsheets/d/1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q/copy"
                         target="_blank" class="justify-content-center d-flex align-items-center w-100 text-white p-2">
                         第一步：複製這個表單
                         <svg width="18" height="18" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -158,7 +157,7 @@
                 <div class="flex-wrap rounded-theme d-flex bg-white p-2 input-container">
                     <div class="d-flex flex-column flex-grow-1">
                         <input type="url" class="p-2 m-2 " #urlLink="ngModel" #urlLinkNativeTag
-                            pattern="https://docs\.google\.com/spreadsheets/d/.+"
+                            pattern="https://docs\.google\.com/spreadsheets/d/.+" (change)="urlLinkChange(urlLink)"
                             (keydown.enter)="clickSubmit($event, submitUrlForm)"
                             placeholder="https://docs.google.com/spreadsheets/d/1ydqYElUX25OfRwThdtlFLFN_Opww7tAUebjIcj_bX1Q/edit?usp=sharing"
                             name="urlLink" ngModel required pattern="https://docs\.google\.com/spreadsheets/d/.+">
@@ -181,8 +180,8 @@
         (ngSubmit)="submitEditingMap(editMapForm.value,gradientPickers[gradientSelectedIndex],  urlForm.value)">
         <div class="pb-4 d-flex justify-content-between align-items-center">
             <h1 class="zh font-size-m m-0aawsertyuuz theme-font">編輯地圖</h1>
-            <button class="btn bg-transparent border-0"
-                (click)="this.blurGraph.emit(false); showEditMapPopup = !showEditMapPopup">
+            <button type="button" class="btn bg-transparent border-0"
+                (click)="closeEditingMap()">
                 <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 6.5L6 18.5" stroke="#0088DC" stroke-opacity="0.69" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round" />
@@ -293,8 +292,8 @@
     <form #uploadedForm="ngForm" class="rounded-theme justify-content-between popup m-auto d-flex flex-column">
         <div class="pb-5 d-flex justify-content-between align-items-center">
             <h1 class="zh font-size-m m-0aawsertyuuz theme-font">建立成功！</h1>
-            <button class="btn bg-transparent border-0"
-                (click)="this.blurGraph.emit(false); showLinkPopup = !showLinkPopup">
+            <button class="btn bg-transparent border-0" type="button"
+                (click)="closeShowLinkPopup()">
                 <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 6.5L6 18.5" stroke="#0088DC" stroke-opacity="0.69" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round" />
@@ -334,8 +333,8 @@
     <div class="pb-0 rounded-theme rounded-theme justify-content-between popup m-auto d-flex flex-column">
         <div class="pb-4 d-flex justify-content-between align-items-stretch">
             <h1 class="zh font-size-m theme-font">其他網友製作的地圖</h1>
-            <button class="btn bg-transparent border-0"
-                (click)="this.blurGraph.emit(false); showBrowseMapsPopup = !showBrowseMapsPopup" #closeUrlForm>
+            <button class="btn bg-transparent border-0" 
+                (click)="closeBrowseMaps()" #closeUrlForm type="button">
                 <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 6.5L6 18.5" stroke="#0088DC" stroke-opacity="0.69" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round" />
