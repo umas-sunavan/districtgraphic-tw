@@ -6,7 +6,7 @@ import { WeatherService } from '../weather.service';
 import { Router, ActivatedRoute, ParamMap } from '@angular/router';
 import { calcPossibleSecurityContexts } from '@angular/compiler/src/template_parser/binding_parser';
 import { CloudService } from '../cloud.service';
-import mixpanel from 'mixpanel-browser'
+import { MixpanelService } from '../mixpanel.service';
 
 @Component({
   selector: 'app-graph-info',
@@ -46,7 +46,8 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
     public weatherService: WeatherService,
     private router: Router,
     private route: ActivatedRoute,
-    private cloudService: CloudService
+    private cloudService: CloudService,
+    private mixpanelService: MixpanelService,
   ) { }
   @Input('districtColor') htmlTextColor: string = ''
   @Input('mouseHoverDetalessMesh') mouseHoverDetalessMesh: boolean = false
@@ -81,15 +82,15 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
       if (this.mapId === 'cloud') {
         this.cloudService.getCloudLastUpdate().subscribe(next => {
           this.cloudLastUpdate = next.cloudLastUpdate
-          mixpanel.track('get_cloud_last_update', {'last_update': this.cloudLastUpdate});
+          this.mixpanelService.track('get_cloud_last_update', {'last_update': this.cloudLastUpdate})
         })
       }
     })
   }
 
   initMixpanel = () => {
-    mixpanel.init('2364e64eb3aa323314fc7e5cc595dc73', {debug: true}); 
-    mixpanel.track('landing', {'on map id': this.mapId, 'on map name': this.mapName});
+    this.mixpanelService.init()
+    this.mixpanelService.track('landing', {'on map id': this.mapId, 'on map name': this.mapName})
   }
 
   async ngAfterViewInit() {
@@ -104,17 +105,17 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
       maps = this.sortMapByDate(maps)
       this.allMaps = maps
     })
-    mixpanel.track('open_browse_maps_popup');
+    this.mixpanelService.track('open_browse_maps_popup')
   }
 
   closeBrowseMaps = () => {
     this.blurGraph.emit(false)
     this.showBrowseMapsPopup = !this.showBrowseMapsPopup
-    mixpanel.track('close_browse_maps_popup');
+    this.mixpanelService.track('close_browse_maps_popup')
   }
 
   clickSourseUrl = (sourceUrl:string) => {
-    mixpanel.track('click_sourse_url', {'source_url': sourceUrl});
+    this.mixpanelService.track('click_sourse_url', {'source_url': sourceUrl})
   }
 
   appendDate = (maps: MapInfoInFirebase[]) => maps.map(map => {
@@ -135,41 +136,41 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
     this.onMapChanged.emit(mapId)
     this.blurGraph.emit(false)
     this.showBrowseMapsPopup = !this.showBrowseMapsPopup;
-    mixpanel.track('click_map', {'map_id': mapId, 'map_name': this.allMaps.find(map => map.mapUrl === mapId)?.mapName});
+    this.mixpanelService.track('click_map', {'map_id': mapId, 'map_name': this.allMaps.find(map => map.mapUrl === mapId)?.mapName})
   }
 
   openCreateMapPop = (btn: any) => {
     this.blurGraph.emit(true)
     this.showCreateMapPopup = !this.showCreateMapPopup;
     btn.blur()
-    mixpanel.track('open_create_map_popup');
+    this.mixpanelService.track('open_create_map_popup')
   }
 
   closeCreateMapPop = () => {
     this.blurGraph.emit(false)
     this.showCreateMapPopup = !this.showCreateMapPopup
-    mixpanel.track('close_create_map_popup');
+    this.mixpanelService.track('close_create_map_popup')
   }
 
   clickTemplateSheet = () => {
-    mixpanel.track('click_template_sheet');
+    this.mixpanelService.track('click_template_sheet')
   }
 
   urlLinkChange = (link: NgModel) => {
-    mixpanel.track('change_create_map_url', { 'link': link.value});
+    this.mixpanelService.track('change_create_map_url', { 'link': link.value})
   }
 
   submitUrl = (formGroup: any) => {
     this.showCreateMapPopup = !this.showCreateMapPopup
     this.showEditMapPopup = !this.showEditMapPopup
     console.log(formGroup.urlLink);
-    mixpanel.track('open_editing_map_popup', { 'link': formGroup.urlLink});
+    this.mixpanelService.track('open_editing_map_popup', { 'link': formGroup.urlLink})
   }
 
   closeEditingMap = () => {
     this.blurGraph.emit(false)
     this.showEditMapPopup = !this.showEditMapPopup
-    mixpanel.track('close_editing_map_popup');
+    this.mixpanelService.track('close_editing_map_popup')
   }
 
   clickSubmit = (event: Event, submitBtn: any) => {
@@ -188,27 +189,27 @@ export class GraphInfoComponent implements OnInit, AfterViewInit {
     if (!mapAttribute.heightUnit) mapAttribute.heightUnit = ''
     if (!mapAttribute.toneUnit) mapAttribute.toneUnit = ''
     const pushedMapRef = this.weatherService.pushMapToFirebase(mapAttribute, toneGradient, mapSource)
-    mixpanel.track('open_show_link_popup', { 'map_id': mapSource, 'map_name': mapAttribute.mapTitle});
+    this.mixpanelService.track('open_show_link_popup', { 'map_id': mapSource.urlLink, 'map_name': mapAttribute.mapTitle})
     if (pushedMapRef.key) {
       const mapId: string = pushedMapRef.key
       this.router.navigate(['/maps', mapId]);
       this.weatherService.setMapRefAsUrlToFirebase(pushedMapRef, mapId)
       this.shareLink = window.location.origin + this.weatherService.addBaseUrl('') + 'maps/' + mapId
       this.onMapChanged.emit(mapId)
-      mixpanel.track('map_created', { 'map_id': mapSource, 'map_name': mapAttribute.mapTitle});
+      this.mixpanelService.track('map_created', { 'map_id': mapSource.urlLink, 'map_name': mapAttribute.mapTitle})
     }
   }
 
   copyShareLink = (btnElement: HTMLButtonElement, shareLink: string) => {
     btnElement.children[1].innerHTML = "複製成功！"
     navigator.clipboard.writeText(shareLink)
-    mixpanel.track('copy_share_link', { 'link': shareLink});
+    this.mixpanelService.track('copy_share_link', { 'link': shareLink})
   }
 
   closeShowLinkPopup = () => {
     this.blurGraph.emit(false)
     this.showLinkPopup = !this.showLinkPopup
-    mixpanel.track('close_show_link_popup');
+    this.mixpanelService.track('close_show_link_popup')
   }
 
 }

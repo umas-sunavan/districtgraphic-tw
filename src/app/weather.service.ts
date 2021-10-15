@@ -7,6 +7,7 @@ import { EnZhMap, WeatherData, ApiWeatherData, Location as ApiLocation, District
 import { Location } from '@angular/common';
 import { AngularFireDatabase } from '@angular/fire/database';
 import { ActivatedRoute } from '@angular/router';
+import { MixpanelService } from './mixpanel.service';
 
 @Injectable({
   providedIn: 'root'
@@ -19,6 +20,7 @@ export class WeatherService {
     private location: Location,
     private db: AngularFireDatabase,
     private route: ActivatedRoute,
+    private mixpanelService: MixpanelService,
   ) {
 
   }
@@ -338,14 +340,10 @@ export class WeatherService {
     let count = 0
 
     const raw = <GoogleSheetRawData>next
-    const firstRow = raw.table.rows[0].c
-    // const zhCityColumnIndex = firstRow.findIndex(cell => cell.v === '縣市')
-    // const zhDistrictColumnIndex = firstRow.findIndex(cell => cell.v === "行政區")
-    // const heightColumnIndex = firstRow.findIndex(cell => cell.v === "高度")
-    // const toneColumnIndex = firstRow.findIndex(cell => cell.v === "色調")
-    // const timelineColumnIndex = firstRow.findIndex(cell => cell.v === "時間軸")
+    console.log(raw);
+    
     const districtsGraphData: DistrictGraphData[] = raw.table.rows
-      .filter((row, index) => row.c[0].v !== '縣市')
+      .filter((row, index) => row.c[0]?.v !== '縣市')
       .map((row, index) => {
         let cityName = ""
         let districtName = ""
@@ -371,10 +369,12 @@ export class WeatherService {
                 console.warn(`臺北縣已升格為直轄市，故修改為新北市`);
               }
             } else {
-              alert(`匯入表單時，發現第${index + 1}行的縣市名稱出現錯誤！`)
+              alert(`匯入表單時，發現第${index + 2}行(A${index + 2})的縣市名稱出現錯誤！`)
+              this.mixpanelService.track('sheet_source_error', {'error_type':`A${index + 2} falsy or is #N/A`, 'error_source_text': row.c[0].v, 'error_source_column_content': row.c.join(', ').toString(), 'print': `匯入表單時，發現第${index + 2}行(A${index + 2})的縣市名稱出現錯誤！`})
             }
           } else {
-            alert(`匯入表單時，發現第${index + 1}行的縣市名稱出現錯誤！請確定有填上值`)
+            alert(`匯入表單時，發現第${index + 2}行(A${index + 2})的縣市名稱出現錯誤！請確定有填上值`)
+            this.mixpanelService.track('sheet_source_error', {'error_type':`A${index + 2} empty`, 'error_source_column_content': row.c.join(', ').toString(), 'print': `匯入表單時，發現第${index + 2}行(A${index + 2})的縣市名稱出現錯誤！請確定有填上值`})
           }
 
           if (row.c[1]) {
@@ -408,10 +408,13 @@ export class WeatherService {
                 alert(`匯入表單時，發現有南沙環礁，目前不支援東沙環礁的資料呈現，請在Google表單請移除該筆資料`)
               }
             } else {
-              alert(`匯入表單時，發現第${index + 1}行的鄉鎮市區名稱出現錯誤！`)
+              alert(`匯入表單時，發現第${index + 2}行(B${index + 2})的鄉鎮市區名稱出現錯誤！`)
+              this.mixpanelService.track('sheet_source_error', {'error_type':`B${index + 2} falsy or is #N/A`, 'error_source_text': row.c[1].v, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(B${index + 2})的縣市名稱出現錯誤！`})
             }
           } else {
-            alert(`匯入表單時，發現第${index + 1}行的鄉鎮市區名稱出現錯誤！請確定有填上值`)
+            alert(`匯入表單時，發現第${index + 2}行(B${index + 2})的鄉鎮市區名稱出現錯誤！請確定有填上值`)
+            this.mixpanelService.track('sheet_source_error', {'error_type':`B${index + 2} empty`, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(B${index + 2})的縣市名稱出現錯誤！請確定有填上值`})
+            
           }
 
 
@@ -424,10 +427,12 @@ export class WeatherService {
                 height = +row.c[2].v
               }
             } else {
-              alert(`匯入表單時，發現第${index + 1}行的高度資料出現錯誤！`)
+              alert(`匯入表單時，發現第${index + 2}行(C${index + 2})的高度資料出現錯誤！`)
+              this.mixpanelService.track('sheet_source_error', {'error_type':`C${index + 2} falsy or is #N/A`, 'error_source_text': row.c[2].v, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(C${index + 2})的高度資料出現錯誤！`})
             }
           } else {
-            alert(`匯入表單時，發現第${index + 1}行的高度資料出現錯誤！請確定有填上值`)
+            alert(`匯入表單時，發現第${index + 2}行(C${index + 2})的高度資料出現錯誤！請確定有填上值`)
+            this.mixpanelService.track('sheet_source_error', {'error_type':`C${index + 2} empty`, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(C${index + 2})的縣市名稱出現錯誤！請確定有填上值`})
           }
 
 
@@ -440,25 +445,29 @@ export class WeatherService {
                 tone = +row.c[3].v
               }
             } else {
-              alert(`匯入表單時，發現第${index + 1}行的色調資料出現錯誤！`)
+              alert(`匯入表單時，發現第${index + 2}行(D${index + 2})的色調資料出現錯誤！`)
+              this.mixpanelService.track('sheet_source_error', {'error_type':`D${index + 2} falsy or is #N/A`, 'error_source_text': row.c[3].v, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(D${index + 2})的色調資料出現錯誤！`})
             }
           } else {
-            alert(`匯入表單時，發現第${index + 1}行的色調資料出現錯誤！請確定有填上值`)
+            alert(`匯入表單時，發現第${index + 2}行(D${index + 2})的色調資料出現錯誤！請確定有填上值`)
+            this.mixpanelService.track('sheet_source_error', {'error_type':`D${index + 2} empty`, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(D${index + 2})的色調資料出現錯誤！請確定有填上值`})
           }
 
 
           if (row.c[4]) {
-            if (row.c[4].v) {
+            console.log(row.c[4].v);
+            
+            if (row.c[4].v && row.c[4].v !== '#N/A') {
               // meshText = row.c[4].v
             } else {
-              alert(`匯入表單時，發現第${index}行的縣市名稱出現錯誤！`)
+              alert(`匯入表單時，發現第${index + 2}行(E${index + 2})行的資料出現錯誤！請填入「第一天」`)
+              this.mixpanelService.track('sheet_source_error', {'error_type':`E${index + 2} falsy or is #N/A`, 'error_source_text': row.c[4].v, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(E${index + 2})行的資料出現錯誤！請填入「第一天」`})
             }
           } else {
-            alert(`匯入表單時，發現第${index}行的縣市名稱出現錯誤！請確定有填上值`)
+            alert(`匯入表單時，發現第${index + 2}行(E${index + 2})的色調資料出現錯誤！請確定有填「第一天」`)
+            this.mixpanelService.track('sheet_source_error', {'error_type':`E${index + 2} empty`, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(E${index + 2})的色調資料出現錯誤！請確定有填「第一天」`})
           }
-        } else {
-          alert(`匯入表單時，發現第${index}行出現錯誤！`)
-        }
+        } 
         return {
           cityName,
           districtName,

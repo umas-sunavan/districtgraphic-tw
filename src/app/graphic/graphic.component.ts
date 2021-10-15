@@ -16,6 +16,7 @@ import { MeshUtilService } from '../mesh-util.service';
 import { TextMeshService } from '../text-mesh.service';
 import * as THREE from 'three';
 import mixpanel from 'mixpanel-browser'
+import { MixpanelService } from '../mixpanel.service';
 
 @Component({
   selector: 'app-graphic',
@@ -62,7 +63,8 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     private colorUtil: ColorUtilService,
     private cloudService: CloudService,
     private meshUtilService: MeshUtilService,
-    private textMeshService: TextMeshService
+    private textMeshService: TextMeshService,
+    private mixpanelService: MixpanelService,
   ) {
     this.dbList = this.db.list('maps')
     this.scene = new Scene()
@@ -124,7 +126,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
       let useLowPerformance = expectedFrameRate < 4
       const clientPerformance =  useHighPerformance ? 'high' : useLowPerformance ? 'low' : 'medium'
       console.log(expectedFrameRate, clientPerformance);
-      mixpanel.track('measure_performance', {"expected_frame_rate": expectedFrameRate, "client_performance": clientPerformance});
+      this.mixpanelService.track('measure_performance', {"expected_frame_rate": expectedFrameRate+'', "client_performance": clientPerformance})
       if (useHighPerformance) {
         const hqLight = new DirectionalLight()
         this.setupShadowTexture(hqLight, 1024)
@@ -151,12 +153,12 @@ export class GraphicComponent implements OnInit, AfterViewInit {
   initCloud = () => {
     const cloudSkeleton = this.cloudService.initSkeletionCloudMmesh()
     this.scene.add(cloudSkeleton)
-    mixpanel.track('add_cloud_skeleton');
+    this.mixpanelService.track('add_cloud_skeleton')
     this.cloudService.initCloudMesh().then(next => {
       this.scene.remove(cloudSkeleton)
       this.cloud = next
       this.scene.add(next)
-      mixpanel.track('add_cloud');
+      this.mixpanelService.track('add_cloud')
     })
   }
 
@@ -490,7 +492,7 @@ export class GraphicComponent implements OnInit, AfterViewInit {
     this.textMeshService.setupAndAnimateTexts(this.camera, this.orbitcontrols, this.scene, this.taiwanMap, this.meshesData)
     this.animateDistrictsHeight()
     this.scene.add(gltf.scene)
-    mixpanel.track('scene_generated');
+    this.mixpanelService.track('scene_generated')
   }
 
   setupMeshData = (graphData: DistrictGraphData[]) => {
