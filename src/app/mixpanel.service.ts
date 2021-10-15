@@ -17,6 +17,6 @@ export class MixpanelService {
   }
 
   init = () => {
-    mixpanel.init('2364e64eb3aa323314fc7e5cc595dc73', { debug: true}); 
+    mixpanel.init('2364e64eb3aa323314fc7e5cc595dc73'); 
   }
 }

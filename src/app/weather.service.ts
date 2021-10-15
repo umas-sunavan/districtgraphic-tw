@@ -337,11 +337,7 @@ export class WeatherService {
 
   convertGoogleSheetToDistrictGraphData = map((next): DistrictGraphData[] => {
     console.log('Google Sheet Rawdata', next);
-    let count = 0
-
-    const raw = <GoogleSheetRawData>next
-    console.log(raw);
-    
+    const raw = <GoogleSheetRawData>next    
     const districtsGraphData: DistrictGraphData[] = raw.table.rows
       .filter((row, index) => row.c[0]?.v !== '縣市')
       .map((row, index) => {
@@ -355,103 +351,10 @@ export class WeatherService {
           description: "",
         }
         if (row.c) {
-
-          if (row.c[0]) {
-            if (row.c[0].v && row.c[0].v !== '#N/A') {
-              cityName = row.c[0].v
-              cityName = cityName.replace("台", "臺")
-              if (cityName === "桃園縣") {
-                cityName = "桃園市"
-                console.warn(`桃園縣已升格為直轄市，故修改為桃園市`);
-              }
-              if (cityName === "臺北縣") {
-                cityName = "新北市"
-                console.warn(`臺北縣已升格為直轄市，故修改為新北市`);
-              }
-            } else {
-              alert(`匯入表單時，發現第${index + 2}行(A${index + 2})的縣市名稱出現錯誤！`)
-              this.mixpanelService.track('sheet_source_error', {'error_type':`A${index + 2} falsy or is #N/A`, 'error_source_text': row.c[0].v, 'error_source_column_content': row.c.join(', ').toString(), 'print': `匯入表單時，發現第${index + 2}行(A${index + 2})的縣市名稱出現錯誤！`})
-            }
-          } else {
-            alert(`匯入表單時，發現第${index + 2}行(A${index + 2})的縣市名稱出現錯誤！請確定有填上值`)
-            this.mixpanelService.track('sheet_source_error', {'error_type':`A${index + 2} empty`, 'error_source_column_content': row.c.join(', ').toString(), 'print': `匯入表單時，發現第${index + 2}行(A${index + 2})的縣市名稱出現錯誤！請確定有填上值`})
-          }
-
-          if (row.c[1]) {
-            if (row.c[0].v && row.c[0].v !== '#N/A') {
-              districtName = row.c[1].v
-              districtName = districtName.replace("台", "臺")
-              if (districtName === "頭份鎮") {
-                districtName = "頭份市"
-                console.warn(`桃園縣已升格為直轄市，故修改為桃園市`);
-              }
-              if (districtName === "員林鎮") {
-                districtName = "員林市"
-                console.warn(`員林鎮已升格為縣轄市，故修改為員林市`);
-              }
-              if (districtName === "峨嵋鄉") {
-                districtName = "峨眉鄉"
-                console.warn(`峨嵋鄉為峨眉鄉的別稱，統一改成峨眉鄉`);
-              }
-              if (districtName === "通宵鎮") {
-                districtName = "通霄鎮"
-                console.warn(`通宵鎮為通霄鎮的別稱，統一改成通霄鎮`);
-              }
-              if (districtName === "溪洲鄉") {
-                districtName = "溪州鄉"
-                console.warn(`溪州鄉為溪洲鄉的別稱，統一改成溪州鄉`);
-              }
-              if (districtName.includes("東沙")) {
-                alert(`匯入表單時，發現有東沙環礁，目前不支援東沙環礁的資料呈現，請在Google表單請移除該筆資料`)
-              }
-              if (districtName === "南沙") {
-                alert(`匯入表單時，發現有南沙環礁，目前不支援東沙環礁的資料呈現，請在Google表單請移除該筆資料`)
-              }
-            } else {
-              alert(`匯入表單時，發現第${index + 2}行(B${index + 2})的鄉鎮市區名稱出現錯誤！`)
-              this.mixpanelService.track('sheet_source_error', {'error_type':`B${index + 2} falsy or is #N/A`, 'error_source_text': row.c[1].v, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(B${index + 2})的縣市名稱出現錯誤！`})
-            }
-          } else {
-            alert(`匯入表單時，發現第${index + 2}行(B${index + 2})的鄉鎮市區名稱出現錯誤！請確定有填上值`)
-            this.mixpanelService.track('sheet_source_error', {'error_type':`B${index + 2} empty`, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(B${index + 2})的縣市名稱出現錯誤！請確定有填上值`})
-            
-          }
-
-
-          if (row.c[2]) {
-            if (row.c[2].v !== undefined) {
-              if (isNaN(parseFloat(row.c[2].v))) {
-                height = -99
-                alert(`匯入表單時發現${row.c[0].v}${row.c[1].v}的高度資料不是數字`)
-              } else {
-                height = +row.c[2].v
-              }
-            } else {
-              alert(`匯入表單時，發現第${index + 2}行(C${index + 2})的高度資料出現錯誤！`)
-              this.mixpanelService.track('sheet_source_error', {'error_type':`C${index + 2} falsy or is #N/A`, 'error_source_text': row.c[2].v, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(C${index + 2})的高度資料出現錯誤！`})
-            }
-          } else {
-            alert(`匯入表單時，發現第${index + 2}行(C${index + 2})的高度資料出現錯誤！請確定有填上值`)
-            this.mixpanelService.track('sheet_source_error', {'error_type':`C${index + 2} empty`, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(C${index + 2})的縣市名稱出現錯誤！請確定有填上值`})
-          }
-
-
-          if (row.c[3]) {
-            if (row.c[3].v !== undefined) {
-              if (isNaN(parseFloat(row.c[3].v))) {
-                tone = -99
-                alert(`匯入表單時發現${row.c[0].v}${row.c[1].v}的色調資料不是數字`)
-              } else {
-                tone = +row.c[3].v
-              }
-            } else {
-              alert(`匯入表單時，發現第${index + 2}行(D${index + 2})的色調資料出現錯誤！`)
-              this.mixpanelService.track('sheet_source_error', {'error_type':`D${index + 2} falsy or is #N/A`, 'error_source_text': row.c[3].v, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(D${index + 2})的色調資料出現錯誤！`})
-            }
-          } else {
-            alert(`匯入表單時，發現第${index + 2}行(D${index + 2})的色調資料出現錯誤！請確定有填上值`)
-            this.mixpanelService.track('sheet_source_error', {'error_type':`D${index + 2} empty`, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(D${index + 2})的色調資料出現錯誤！請確定有填上值`})
-          }
+          cityName = this.checkCityInputError(row, index)
+          districtName = this.checkDistrictInputError(row, index)
+          height = this.checkHeightInputError(row, index)
+          tone = this.checkToneInputError(row, index)
         } 
         return {
           cityName,
@@ -461,10 +364,119 @@ export class WeatherService {
           meshText,
         }
       })
-    console.log(districtsGraphData);
-
     return districtsGraphData
   })
+
+  checkCityInputError = (row:{c: {v: string}[]}, index: number) => {
+    let cityName = ""
+    if (row.c[0]) {
+      if (row.c[0].v && row.c[0].v !== '#N/A') {
+        cityName = row.c[0].v
+        cityName = cityName.replace("台", "臺")
+        if (cityName === "桃園縣") {
+          cityName = "桃園市"
+          console.warn(`桃園縣已升格為直轄市，故修改為桃園市`);
+        }
+        if (cityName === "臺北縣") {
+          cityName = "新北市"
+          console.warn(`臺北縣已升格為直轄市，故修改為新北市`);
+        }
+      } else {
+        alert(`匯入表單時，發現第${index + 2}行(A${index + 2})的縣市名稱出現錯誤！`)
+        this.mixpanelService.track('sheet_source_error', {'error_type':`A${index + 2} falsy or is #N/A`, 'error_source_text': row.c[0].v, 'error_source_column_content': row.c.join(', ').toString(), 'print': `匯入表單時，發現第${index + 2}行(A${index + 2})的縣市名稱出現錯誤！`})
+      }
+    } else {
+      alert(`匯入表單時，發現第${index + 2}行(A${index + 2})的縣市名稱出現錯誤！請確定有填上值`)
+      this.mixpanelService.track('sheet_source_error', {'error_type':`A${index + 2} empty`, 'error_source_column_content': row.c.join(', ').toString(), 'print': `匯入表單時，發現第${index + 2}行(A${index + 2})的縣市名稱出現錯誤！請確定有填上值`})
+    }
+    return cityName
+  }
+
+  checkDistrictInputError = (row:{c: {v: string}[]}, index: number) => {
+    let districtName = ""
+    if (row.c[1]) {
+      if (row.c[0].v && row.c[0].v !== '#N/A') {
+        districtName = row.c[1].v
+        districtName = districtName.replace("台", "臺")
+        if (districtName === "頭份鎮") {
+          districtName = "頭份市"
+          console.warn(`桃園縣已升格為直轄市，故修改為桃園市`);
+        }
+        if (districtName === "員林鎮") {
+          districtName = "員林市"
+          console.warn(`員林鎮已升格為縣轄市，故修改為員林市`);
+        }
+        if (districtName === "峨嵋鄉") {
+          districtName = "峨眉鄉"
+          console.warn(`峨嵋鄉為峨眉鄉的別稱，統一改成峨眉鄉`);
+        }
+        if (districtName === "通宵鎮") {
+          districtName = "通霄鎮"
+          console.warn(`通宵鎮為通霄鎮的別稱，統一改成通霄鎮`);
+        }
+        if (districtName === "溪洲鄉") {
+          districtName = "溪州鄉"
+          console.warn(`溪州鄉為溪洲鄉的別稱，統一改成溪州鄉`);
+        }
+        if (districtName.includes("東沙")) {
+          alert(`匯入表單時，發現有東沙環礁，目前不支援東沙環礁的資料呈現，請在Google表單請移除該筆資料`)
+        }
+        if (districtName === "南沙") {
+          alert(`匯入表單時，發現有南沙環礁，目前不支援東沙環礁的資料呈現，請在Google表單請移除該筆資料`)
+        }
+      } else {
+        alert(`匯入表單時，發現第${index + 2}行(B${index + 2})的鄉鎮市區名稱出現錯誤！`)
+        this.mixpanelService.track('sheet_source_error', {'error_type':`B${index + 2} falsy or is #N/A`, 'error_source_text': row.c[1].v, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(B${index + 2})的縣市名稱出現錯誤！`})
+      }
+    } else {
+      alert(`匯入表單時，發現第${index + 2}行(B${index + 2})的鄉鎮市區名稱出現錯誤！請確定有填上值`)
+      this.mixpanelService.track('sheet_source_error', {'error_type':`B${index + 2} empty`, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(B${index + 2})的縣市名稱出現錯誤！請確定有填上值`})
+    }
+    return districtName
+
+  }
+
+  checkHeightInputError = (row:{c: {v: string}[]}, index: number) => {
+    let height = 0
+    if (row.c[2]) {
+      if (row.c[2].v !== undefined) {
+        if (isNaN(parseFloat(row.c[2].v))) {
+          height = -99
+          alert(`匯入表單時發現${row.c[0].v}${row.c[1].v}的高度資料不是數字`)
+        } else {
+          height = +row.c[2].v
+        }
+      } else {
+        alert(`匯入表單時，發現第${index + 2}行(C${index + 2})的高度資料出現錯誤！`)
+        this.mixpanelService.track('sheet_source_error', {'error_type':`C${index + 2} falsy or is #N/A`, 'error_source_text': row.c[2].v, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(C${index + 2})的高度資料出現錯誤！`})
+      }
+    } else {
+      alert(`匯入表單時，發現第${index + 2}行(C${index + 2})的高度資料出現錯誤！請確定有填上值`)
+      this.mixpanelService.track('sheet_source_error', {'error_type':`C${index + 2} empty`, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(C${index + 2})的縣市名稱出現錯誤！請確定有填上值`})
+    }
+    return height
+  }
+
+  checkToneInputError = (row:{c: {v: string}[]}, index: number) => {
+    let tone = 0
+    if (row.c[3]) {
+      if (row.c[3].v !== undefined) {
+        if (isNaN(parseFloat(row.c[3].v))) {
+          tone = -99
+          alert(`匯入表單時發現${row.c[0].v}${row.c[1].v}的色調資料不是數字`)
+        } else {
+          tone = +row.c[3].v
+        }
+      } else {
+        alert(`匯入表單時，發現第${index + 2}行(D${index + 2})的色調資料出現錯誤！`)
+        this.mixpanelService.track('sheet_source_error', {'error_type':`D${index + 2} falsy or is #N/A`, 'error_source_text': row.c[3].v, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(D${index + 2})的色調資料出現錯誤！`})
+      }
+    } else {
+      alert(`匯入表單時，發現第${index + 2}行(D${index + 2})的色調資料出現錯誤！請確定有填上值`)
+      this.mixpanelService.track('sheet_source_error', {'error_type':`D${index + 2} empty`, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(D${index + 2})的色調資料出現錯誤！請確定有填上值`})
+    }
+    return tone
+  }
 
   filterMalfunctionStation = map((graphsData: DistrictGraphData[]): DistrictGraphData[] => {
     // filterMalfunctionStation = map((value: WeatherData): WeatherData => {
