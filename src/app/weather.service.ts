@@ -452,21 +452,6 @@ export class WeatherService {
             alert(`匯入表單時，發現第${index + 2}行(D${index + 2})的色調資料出現錯誤！請確定有填上值`)
             this.mixpanelService.track('sheet_source_error', {'error_type':`D${index + 2} empty`, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(D${index + 2})的色調資料出現錯誤！請確定有填上值`})
           }
-
-
-          if (row.c[4]) {
-            console.log(row.c[4].v);
-            
-            if (row.c[4].v && row.c[4].v !== '#N/A') {
-              // meshText = row.c[4].v
-            } else {
-              alert(`匯入表單時，發現第${index + 2}行(E${index + 2})行的資料出現錯誤！請填入「第一天」`)
-              this.mixpanelService.track('sheet_source_error', {'error_type':`E${index + 2} falsy or is #N/A`, 'error_source_text': row.c[4].v, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(E${index + 2})行的資料出現錯誤！請填入「第一天」`})
-            }
-          } else {
-            alert(`匯入表單時，發現第${index + 2}行(E${index + 2})的色調資料出現錯誤！請確定有填「第一天」`)
-            this.mixpanelService.track('sheet_source_error', {'error_type':`E${index + 2} empty`, 'error_source_column_content': JSON.stringify(row.c), 'print': `匯入表單時，發現第${index + 2}行(E${index + 2})的色調資料出現錯誤！請確定有填「第一天」`})
-          }
         } 
         return {
           cityName,
