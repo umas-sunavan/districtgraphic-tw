@@ -30,6 +30,65 @@ export class ImageProcessingService {
     return imageData
   }
 
+  levelAdjustment = (imageData: ImageData): ImageData => {
+
+    const _darkLevelAdjustment = (sorted: Uint8ClampedArray, pixelCount: number) => {
+      const darkSampleIndex = Math.floor(pixelCount * 0.25 * 0.99994)
+      const darkSmapleValue = sorted[darkSampleIndex * 4]
+      console.log('darkSmapleValue',darkSmapleValue);
+      if (darkSmapleValue > 10) {
+        const adjustor = 255 / (255 - darkSmapleValue)
+        for (let color = 0; color < imageData.data.length; color++) {
+          imageData.data[color] -= darkSmapleValue
+          imageData.data[color] *= adjustor
+        }
+        
+      } else {
+        console.log('no level adjustment');
+      }
+    }
+
+    const _brightLevelAdjustment = (sorted: Uint8ClampedArray, pixelCount: number) => {
+      const brightSampleIndex = Math.floor(pixelCount * 0.25 * 0.00006)
+      const brightSampleValue = sorted[brightSampleIndex * 4]
+      console.log('brightSampleValue',brightSampleValue);
+      if (brightSampleValue < 255 * 0.9) {
+        const adjustor = 255 / brightSampleValue
+        for (let color = 0; color < imageData.data.length; color++) {
+          imageData.data[color] *= adjustor
+          if (imageData.data[color] > 255) {
+            imageData.data[color] = 255
+          }
+        }
+      } else {
+        console.log('no level adjustment');
+      }
+    }
+
+    const sorted = new Uint8ClampedArray(imageData.data).filter((color, i) => i % 4 === 0).sort((a: number, b: number) => b - a)
+    const pixelCount = sorted.length
+    _brightLevelAdjustment(sorted, pixelCount)
+    _darkLevelAdjustment(sorted, pixelCount)
+    return imageData
+  }
+
+
+  gammaCorrection = (imageData: ImageData, gamma: number) => {
+    const gammaCorrection = 1 / gamma
+    for (let pixel = 0; pixel < imageData.data.length; pixel += 4) {
+      const normalR = imageData.data[pixel] / 255
+      const normalG = imageData.data[pixel + 1] / 255
+      const normalB = imageData.data[pixel + 2] / 255
+      const correctedNormalR = Math.pow(normalR, gammaCorrection)
+      const correctedNormalG = Math.pow(normalG, gammaCorrection)
+      const correctedNormalB = Math.pow(normalB, gammaCorrection)
+      imageData.data[pixel] = correctedNormalR * 255
+      imageData.data[pixel + 1] = correctedNormalG * 255
+      imageData.data[pixel + 2] = correctedNormalB * 255
+    }
+    return imageData
+  }
+
   shrinkImageData = (imageData: ImageData, shrinkPixels: number) => {
     const pixelsToShrink: number[] = []
 
@@ -65,7 +124,10 @@ export class ImageProcessingService {
 
   filterDarkness = (imageData: ImageData, threshold: number): ImageData => {
     for (let pixel = 0; pixel < imageData.data.length; pixel += 4) {
-      const isDarkness = imageData.data[pixel] < threshold ? true : false
+      const r = imageData.data[pixel]
+      const g = imageData.data[pixel + 1]
+      const b = imageData.data[pixel + 2]
+      const isDarkness = r < threshold && g < threshold && b < threshold
       if (isDarkness) {
         imageData.data[pixel] = 0
         imageData.data[pixel + 1] = 0

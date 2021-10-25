@@ -90,6 +90,8 @@ export class CloudService {
   setupCloudMaterial = (context: CanvasRenderingContext2D): Material => {
     const imageData = context.getImageData(0, 0, 572, 572)
     const imageArray = imageData.data
+    this.imageProcess.levelAdjustment(imageData)
+    // this.imageProcess.gammaCorrection(imageData,0.5)
     this.imageProcess.filterDarkness(imageData, 100)
     this.imageProcess.normalize(imageData, { bottom: 100 })
     let alphaImageArray = Uint8ClampedArray.from(imageArray)
