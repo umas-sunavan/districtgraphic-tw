@@ -1,4 +1,4 @@
-<div class="w-100 position-absolute intercation-area d-flex" [ngClass]="showCreateMapPopup? 'blur':''">
+<div class="w-100 position-absolute intercation-area d-flex" [ngClass]="{'blur': showCreateMapPopup ? true : false, 'cloud-mode' : mapId === 'cloud'}">
     <div class="col-6 d-flex flex-column">
         <div class="overview-info pb-5">
             <p class="zh mb-4 theme-font font-size-s">台灣資訊圖像化 v1.1</p>
